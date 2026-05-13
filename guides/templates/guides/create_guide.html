@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Guía de Despacho</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 20px;
+        }
+        
+        .header {
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            position: relative;
+            display: flex;
+            gap: 8px;
+        }
+        
+        input[type="text"],
+        input[type="url"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .btn-search {
+            padding: 12px 16px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            white-space: nowrap;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-search:hover {
+            background-color: #5568d3;
+        }
+        
+        .btn-search:active {
+            transform: scale(0.98);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #667eea;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .client-info {
+            background-color: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .client-info.show {
+            display: block;
+        }
+        
+        .client-info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .client-info strong {
+            color: #667eea;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 10px 0;
+            color: #721c24;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .conditional-field {
+            display: none;
+        }
+        
+        .conditional-field.show {
+            display: block;
+        }
+        
+        .messages {
+            margin: 20px 0;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        
+        .message.error {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .btn-submit {
+            flex: 1;
+            padding: 14px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-submit:hover {
+            background-color: #218838;
+        }
+        
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-cancel {
+            flex: 1;
+            padding: 14px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-cancel:hover {
+            background-color: #5a6268;
+        }
+        
+        .required {
+            color: #dc3545;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .btn-search {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Nueva Guía de Despacho</h1>
+            <p class="subtitle">Registra una nueva guía en el sistema</p>
+        </div>
+        
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <form method="post" id="guideForm">
+            {% csrf_token %}
+            
+            <!-- Sección 1: Búsqueda de Cliente -->
+            <div class="form-group">
+                <label for="rut">RUT del Cliente <span class="required">*</span></label>
+                <div class="input-group">
+                    <input type="text" id="rut" name="rut" placeholder="Ej: 12345678-9" 
+                           value="{{ form.rut.value|default:'' }}" required>
+                    <button type="button" class="btn-search" id="btnSearch">Buscar</button>
+                </div>
+                {% if form.rut.errors %}
+                <div class="error-message show">
+                    {{ form.rut.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Indicador de carga -->
+            <div class="loading" id="loading">
+                Buscando cliente...
+            </div>
+            
+            <!-- Información del cliente encontrado -->
+            <div class="client-info" id="clientInfo">
+                <p><strong>Cliente:</strong> <span id="clientNombre"></span></p>
+                <p><strong>Dirección de facturación:</strong></p>
+                <p id="clientDireccion" style="font-size: 13px; white-space: pre-wrap;"></p>
+            </div>
+            
+            <!-- Sección 2: Número de Guía -->
+            <div class="form-group">
+                <label for="numero_guia">Número de Guía <span class="required">*</span></label>
+                <input type="text" id="numero_guia" name="numero_guia" 
+                       placeholder="Ej: G-2025-001" required
+                       value="{{ form.numero_guia.value|default:'' }}">
+                {% if form.numero_guia.errors %}
+                <div class="error-message show">
+                    {{ form.numero_guia.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Sección 3: Dirección de Entrega -->
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="usa_direccion_facturacion" name="usa_direccion_facturacion" 
+                           checked onchange="toggleDireccionAlternativa()">
+                    <label for="usa_direccion_facturacion" style="margin-bottom: 0;">
+                        Usar dirección de facturación
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Dirección alternativa -->
+            <div class="form-group conditional-field" id="direccionAlternativaGroup">
+                <label for="direccion_entrega">Dirección de Entrega <span class="required">*</span></label>
+                <textarea id="direccion_entrega" name="direccion_entrega" 
+                          placeholder="Ingresa la dirección donde se entregará el paquete"
+                          rows="3"></textarea>
+            </div>
+            
+            <!-- Google Maps Link -->
+            <div class="form-group conditional-field" id="mapLinkGroup">
+                <label for="map_link">Link de Google Maps (opcional)</label>
+                <input type="url" id="map_link" name="map_link" 
+                       placeholder="https://maps.google.com/...">
+            </div>
+            
+            <!-- Sección 4: Transportista -->
+            <div class="form-group">
+                <label for="transportista">Transportista (opcional)</label>
+                <select id="transportista" name="transportista">
+                    <option value="">-- Seleccionar transportista --</option>
+                    {% for user in form.transportista.queryset %}
+                    <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Sección 5: Notas -->
+            <div class="form-group">
+                <label for="notas">Observaciones</label>
+                <textarea id="notas" name="notas" 
+                          placeholder="Notas adicionales sobre la guía"
+                          rows="3">{{ form.notas.value|default:'' }}</textarea>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="button-group">
+                <button type="submit" class="btn-submit">✓ Crear Guía</button>
+                <a href="{% url 'guide_list' %}" class="btn-cancel">Cancelar</a>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        const rutInput = document.getElementById('rut');
+        const btnSearch = document.getElementById('btnSearch');
+        const loading = document.getElementById('loading');
+        const clientInfo = document.getElementById('clientInfo');
+        const usaDireccionCheckbox = document.getElementById('usa_direccion_facturacion');
+        const direccionAlternativaGroup = document.getElementById('direccionAlternativaGroup');
+        const mapLinkGroup = document.getElementById('mapLinkGroup');
+        const numeroGuiaInput = document.getElementById('numero_guia');
+        
+        // Búsqueda de cliente por RUT
+        btnSearch.addEventListener('click', async function() {
+            const rut = rutInput.value.trim();
+            
+            if (!rut) {
+                alert('Ingresa un RUT');
+                return;
+            }
+            
+            loading.classList.add('show');
+            clientInfo.classList.remove('show');
+            
+            try {
+                const formData = new FormData();
+                formData.append('rut', rut);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                const response = await fetch('{% url "search_client" %}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('clientNombre').textContent = data.nombre;
+                    document.getElementById('clientDireccion').textContent = data.direccion_facturacion;
+                    clientInfo.classList.add('show');
+                } else {
+                    alert(data.error || 'Cliente no encontrado');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al buscar cliente');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+        
+        // Permitir búsqueda con Enter
+        rutInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                btnSearch.click();
+            }
+        });
+        
+        // Mostrar/ocultar dirección alternativa
+        function toggleDireccionAlternativa() {
+            if (usaDireccionCheckbox.checked) {
+                direccionAlternativaGroup.classList.remove('show');
+                mapLinkGroup.classList.remove('show');
+                document.getElementById('direccion_entrega').removeAttribute('required');
+            } else {
+                direccionAlternativaGroup.classList.add('show');
+                mapLinkGroup.classList.add('show');
+                document.getElementById('direccion_entrega').setAttribute('required', 'required');
+            }
+        }
+        
+        // Validación en cliente
+        document.getElementById('guideForm').addEventListener('submit', function(e) {
+            const rut = rutInput.value.trim();
+            const numeroGuia = numeroGuiaInput.value.trim();
+            
+            if (!rut) {
+                e.preventDefault();
+                alert('Debe buscar un cliente primero');
+                rutInput.focus();
+                return;
+            }
+            
+            if (!numeroGuia) {
+                e.preventDefault();
+                alert('Ingresa un número de guía');
+                numeroGuiaInput.focus();
+                return;
+            }
+            
+            if (!usaDireccionCheckbox.checked) {
+                const direccion = document.getElementById('direccion_entrega').value.trim();
+                if (!direccion) {
+                    e.preventDefault();
+                    alert('Ingresa una dirección de entrega');
+                    document.getElementById('direccion_entrega').focus();
+                    return;
+                }
+            }
+        });
+        
+        // Inicializar estado de dirección alternativa
+        toggleDireccionAlternativa();
+    </script>
+</body>
+</html>
