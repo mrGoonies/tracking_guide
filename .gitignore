@@ -5,6 +5,14 @@ build/
 dist/
 wheels/
 *.egg-info
+*.pyc
 
 # Virtual environments
 .venv
+
+# sqlite database files
+*.db
+*.sqlite3
+
+# Django media files
+media/
