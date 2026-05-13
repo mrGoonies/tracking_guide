@@ -4,10 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Guías</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .notice {
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #004085;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>Lista de Guías de Despacho</h1>
-    <p>Aquí se listarán las guías (pendiente implementar).</p>
-    <a href="{% url 'home' %}">Volver</a>
+    <div class="container">
+        <h1>📋 Lista de Guías de Despacho</h1>
+        
+        <div class="notice">
+            <strong>Próximamente:</strong> Aquí se listarán todas las guías de despacho del sistema. 
+            Funcionalidad en desarrollo.
+        </div>
+        
+        <a href="{% url 'home' %}">← Volver al inicio</a>
+    </div>
 </body>
 </html>
