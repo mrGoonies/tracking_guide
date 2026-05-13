@@ -62,6 +62,24 @@
         <h1>🚚 Tracking Guide</h1>
         <p class="subtitle">Sistema de trazabilidad de guías de despacho</p>
         
+        {% if user.is_authenticated %}
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="color: #333;">
+                <strong>Bienvenido:</strong> {{ user.get_full_name|default:user.username }}
+                {% if user.groups.exists %}
+                    - Rol: {{ user.groups.all|join:", " }}
+                {% endif %}
+            </div>
+            <div>
+                <a href="{% url 'logout' %}" style="color:#007bff; text-decoration:none; font-weight:bold;">Cerrar sesión</a>
+            </div>
+        </div>
+        {% else %}
+        <div style="margin-bottom: 20px;">
+            <a href="{% url 'login' %}" style="color:#007bff; text-decoration:none; font-weight:bold;">Iniciar sesión</a>
+        </div>
+        {% endif %}
+
         <div class="menu">
             <a href="{% url 'create_guide' %}">📦 Nueva Guía</a>
             <a href="{% url 'guide_list' %}">📋 Ver Guías</a>

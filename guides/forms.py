@@ -48,6 +48,14 @@ class CreateDispatchGuideForm(forms.ModelForm):
             })
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        transportistas = User.objects.filter(groups__name='Transportista')
+        if transportistas.exists():
+            self.fields['transportista'].queryset = transportistas
+        else:
+            self.fields['transportista'].queryset = User.objects.all()
+
 
 class UpdateGuideStateForm(forms.Form):
     """Formulario para actualizar el estado de una guía con evidencia fotográfica."""

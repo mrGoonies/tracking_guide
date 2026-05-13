@@ -1,5 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -10,6 +13,30 @@ from .models import Client, DispatchGuide, GuideStage
 def home(request):
     return render(request, 'guides/home.html')
 
+
+def user_login(request):
+    if request.user.is_authenticated:
+        return redirect('guide_list')
+
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect(request.GET.get('next') or 'guide_list')
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'guides/login.html', {'form': form})
+
+
+@login_required
+def user_logout(request):
+    logout(request)
+    messages.success(request, 'Sesión cerrada correctamente')
+    return redirect('home')
+
+
+@login_required
 def import_clients(request):
     """Vista para importar clientes desde CSV."""
     if request.method == 'POST':
@@ -46,6 +73,7 @@ def import_clients(request):
     }
     return render(request, 'guides/import_clients.html', context)
 
+@login_required
 def guide_list(request):
     estado_filtro = request.GET.get('estado', '').strip()
     guides = DispatchGuide.objects.select_related('cliente', 'transportista').order_by('-fecha_creacion')
@@ -85,6 +113,7 @@ def search_client_by_rut(request):
         }, status=404)
 
 
+@login_required
 def create_guide(request):
     """Vista para crear una nueva guía de despacho (mobile-first)."""
     if request.method == 'POST':
@@ -141,6 +170,7 @@ def create_guide(request):
     return render(request, 'guides/create_guide.html', context)
 
 
+@login_required
 def guide_detail(request, guide_id):
     """Vista para ver y actualizar el estado de una guía específica."""
     try:
