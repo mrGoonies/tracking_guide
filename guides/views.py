@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from .forms import ImportClientCSVForm, CreateDispatchGuideForm
+from .forms import ImportClientCSVForm, CreateDispatchGuideForm, UpdateGuideStateForm
 from .utils import import_clients_from_csv
 from .models import Client, DispatchGuide, GuideStage
 
@@ -47,7 +47,18 @@ def import_clients(request):
     return render(request, 'guides/import_clients.html', context)
 
 def guide_list(request):
-    return render(request, 'guides/guide_list.html')
+    estado_filtro = request.GET.get('estado', '').strip()
+    guides = DispatchGuide.objects.select_related('cliente', 'transportista').order_by('-fecha_creacion')
+    
+    if estado_filtro:
+        guides = guides.filter(estado=estado_filtro)
+    
+    context = {
+        'guides': guides,
+        'estado_filtro': estado_filtro,
+        'estado_choices': DispatchGuide.STATUS_CHOICES,
+    }
+    return render(request, 'guides/guide_list.html', context)
 
 
 @require_POST
@@ -79,31 +90,40 @@ def create_guide(request):
     if request.method == 'POST':
         form = CreateDispatchGuideForm(request.POST)
         
-        # Obtener datos de dirección entrega si no usa facturación
+        rut = request.POST.get('rut', '').strip()
         direccion_entrega = request.POST.get('direccion_entrega', '').strip()
         usa_direccion_facturacion = request.POST.get('usa_direccion_facturacion') == 'on'
         map_link = request.POST.get('map_link', '').strip()
         
+        if not rut:
+            messages.error(request, 'Debe ingresar el RUT del cliente')
+            return render(request, 'guides/create_guide.html', {'form': form})
+
+        try:
+            cliente = Client.objects.get(rut=rut)
+        except Client.DoesNotExist:
+            messages.error(request, f'No existe cliente con RUT: {rut}')
+            return render(request, 'guides/create_guide.html', {'form': form})
+        
         if form.is_valid():
-            # Validar que si no usa dirección de facturación, ingrese una alternativa
             if not usa_direccion_facturacion and not direccion_entrega:
                 messages.error(request, 'Debe ingresar una dirección de entrega si no usa la de facturación')
                 return render(request, 'guides/create_guide.html', {'form': form})
             
             guide = form.save(commit=False)
+            guide.cliente = cliente
             
-            # Asignar dirección de entrega custom si aplica
-            if not usa_direccion_facturacion:
+            if usa_direccion_facturacion:
+                guide.direccion_entrega = cliente.direccion_facturacion
+            else:
                 guide.direccion_entrega = direccion_entrega
             
-            # Asignar map_link si existe
             if map_link:
                 guide.map_link = map_link
             
             guide.usa_direccion_facturacion = usa_direccion_facturacion
             guide.save()
             
-            # Registrar la etapa inicial
             GuideStage.objects.create(
                 guia=guide,
                 estado='emitida',
@@ -119,3 +139,54 @@ def create_guide(request):
         'form': form
     }
     return render(request, 'guides/create_guide.html', context)
+
+
+def guide_detail(request, guide_id):
+    """Vista para ver y actualizar el estado de una guía específica."""
+    try:
+        guide = DispatchGuide.objects.get(id=guide_id)
+    except DispatchGuide.DoesNotExist:
+        messages.error(request, 'Guía no encontrada')
+        return redirect('guide_list')
+    
+    stages = guide.etapas.order_by('-timestamp')
+    
+    next_state_map = {
+        'emitida': [('asignada', 'Asignar'), ('en_ruta', 'En Ruta'), ('rechazada', 'Rechazada')],
+        'asignada': [('en_ruta', 'En Ruta'), ('entregada', 'Entregada'), ('rechazada', 'Rechazada')],
+        'en_ruta': [('entregada', 'Entregada'), ('rechazada', 'Rechazada')],
+        'entregada': [('cerrada', 'Cerrar')],
+        'rechazada': [('cerrada', 'Cerrar')],
+        'cerrada': [],
+    }
+    next_states = next_state_map.get(guide.estado, [])
+    
+    if request.method == 'POST':
+        form = UpdateGuideStateForm(request.POST, request.FILES)
+        if form.is_valid():
+            nuevo_estado = form.cleaned_data['nuevo_estado']
+            evidencia_foto = form.cleaned_data['evidencia_foto']
+            notas = form.cleaned_data.get('notas', '')
+            
+            GuideStage.objects.create(
+                guia=guide,
+                estado=nuevo_estado,
+                evidencia_foto=evidencia_foto,
+                observaciones=notas
+            )
+            
+            guide.estado = nuevo_estado
+            guide.save()
+            
+            messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
+            return redirect('guide_detail', guide_id=guide.id)
+    else:
+        form = UpdateGuideStateForm()
+    
+    context = {
+        'guide': guide,
+        'stages': stages,
+        'form': form,
+        'next_states': next_states,
+    }
+    return render(request, 'guides/guide_detail.html', context)

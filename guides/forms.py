@@ -47,36 +47,28 @@ class CreateDispatchGuideForm(forms.ModelForm):
                 'class': 'form-textarea'
             })
         }
+
+
+class UpdateGuideStateForm(forms.Form):
+    """Formulario para actualizar el estado de una guía con evidencia fotográfica."""
+    nuevo_estado = forms.ChoiceField(
+        label='Nuevo Estado',
+        choices=DispatchGuide.STATUS_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Filtrar transportistas: solo usuarios que puedan ser transportistas
-        self.fields['transportista'].queryset = User.objects.all()
-        self.fields['transportista'].required = False
+    evidencia_foto = forms.ImageField(
+        label='Evidencia Fotográfica',
+        required=True,
+        widget=forms.FileInput(attrs={'accept': 'image/*', 'capture': 'environment', 'class': 'form-input'})
+    )
     
-    def clean(self):
-        cleaned_data = super().clean()
-        rut = cleaned_data.get('rut')
-        
-        # Validar que el cliente exista
-        if rut:
-            try:
-                client = Client.objects.get(rut=rut.strip())
-                cleaned_data['cliente'] = client
-            except Client.DoesNotExist:
-                raise forms.ValidationError(f"No existe cliente con RUT: {rut}")
-        
-        return cleaned_data
-    
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.cliente = self.cleaned_data.get('cliente')
-        
-        # Asignar dirección de entrega
-        if self.cleaned_data.get('usa_direccion_facturacion'):
-            instance.direccion_entrega = instance.cliente.direccion_facturacion
-        # Si no usa facturación, la dirección debe ser completada en otra vista
-        
-        if commit:
-            instance.save()
-        return instance
+    notas = forms.CharField(
+        label='Notas del Cambio',
+        required=False,
+        widget=forms.Textarea(attrs={
+            'placeholder': 'Observaciones sobre el cambio de estado',
+            'rows': 2,
+            'class': 'form-textarea'
+        })
+    )
