@@ -1,9 +1,14 @@
+from datetime import timedelta
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
+from django.db.models import Count, Q
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from .forms import ImportClientCSVForm, CreateDispatchGuideForm, UpdateGuideStateForm
@@ -87,6 +92,53 @@ def guide_list(request):
         'estado_choices': DispatchGuide.STATUS_CHOICES,
     }
     return render(request, 'guides/guide_list.html', context)
+
+
+@login_required
+def dashboard(request):
+    total_clients = Client.objects.count()
+    total_guides = DispatchGuide.objects.count()
+    total_stages = GuideStage.objects.count()
+    status_counts = {status: 0 for status, _ in DispatchGuide.STATUS_CHOICES}
+    for item in DispatchGuide.objects.values('estado').annotate(count=Count('id')):
+        status_counts[item['estado']] = item['count']
+
+    status_breakdown = []
+    for status, label in DispatchGuide.STATUS_CHOICES:
+        count = status_counts.get(status, 0)
+        percent = (count / total_guides * 100) if total_guides else 0
+        status_breakdown.append({
+            'estado': status,
+            'label': label,
+            'count': count,
+            'percent': round(percent, 1)
+        })
+
+    open_guides = DispatchGuide.objects.filter(~Q(estado__in=['entregada', 'rechazada', 'cerrada'])).count()
+    closed_guides = DispatchGuide.objects.filter(estado__in=['entregada', 'rechazada', 'cerrada']).count()
+    recent_guides = DispatchGuide.objects.select_related('cliente', 'transportista').order_by('-fecha_creacion')[:8]
+    week_start = timezone.now() - timedelta(days=7)
+    guides_last_7_days = DispatchGuide.objects.filter(fecha_creacion__gte=week_start).count()
+    top_clients = Client.objects.annotate(guides_count=Count('guias')).order_by('-guides_count')[:5]
+    top_carriers = User.objects.annotate(guides_count=Count('guias_asignadas')).filter(guides_count__gt=0).order_by('-guides_count')[:5]
+    latest_stages = GuideStage.objects.select_related('guia').order_by('-timestamp')[:8]
+    stage_photo_count = GuideStage.objects.filter(foto__isnull=False).count()
+
+    context = {
+        'total_clients': total_clients,
+        'total_guides': total_guides,
+        'total_stages': total_stages,
+        'status_breakdown': status_breakdown,
+        'open_guides': open_guides,
+        'closed_guides': closed_guides,
+        'recent_guides': recent_guides,
+        'guides_last_7_days': guides_last_7_days,
+        'top_clients': top_clients,
+        'top_carriers': top_carriers,
+        'latest_stages': latest_stages,
+        'stage_photo_count': stage_photo_count,
+    }
+    return render(request, 'guides/dashboard.html', context)
 
 
 @require_POST
