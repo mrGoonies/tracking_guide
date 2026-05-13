@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Guía - {{ guide.numero_guia }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .guide-info {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .guide-info h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .info-item strong {
+            display: block;
+            color: #495057;
+            font-size: 0.9em;
+        }
+        .stages {
+            padding: 20px;
+        }
+        .stages h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .stage {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .stage-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-emitida { background: #6c757d; }
+        .status-asignada { background: #ffc107; color: #212529; }
+        .status-en_ruta { background: #17a2b8; }
+        .status-entregada { background: #28a745; }
+        .status-rechazada { background: #dc3545; }
+        .status-cerrada { background: #343a40; }
+        .stage-time {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .stage-photo {
+            margin-top: 10px;
+        }
+        .stage-photo img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .update-form {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+        .update-form h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .form-select, .form-textarea, .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-left: 10px;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .messages {
+            padding: 20px;
+            margin-bottom: 0;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .stage-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Guía #{{ guide.numero_guia }}</h1>
+        </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="guide-info">
+            <h2>Información de la Guía</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Cliente</strong>
+                    {{ guide.cliente.nombre }} ({{ guide.cliente.rut }})
+                </div>
+                <div class="info-item">
+                    <strong>Estado Actual</strong>
+                    <span class="stage-status status-{{ guide.estado|lower }}">{{ guide.get_estado_display }}</span>
+                </div>
+                <div class="info-item">
+                    <strong>Dirección de Entrega</strong>
+                    {{ guide.direccion_entrega }}
+                </div>
+                <div class="info-item">
+                    <strong>Transportista</strong>
+                    {% if guide.transportista %}
+                        {{ guide.transportista.get_full_name|default:guide.transportista.username }}
+                    {% else %}
+                        Sin transportista asignado
+                    {% endif %}
+                </div>
+                {% if guide.map_link %}
+                <div class="info-item">
+                    <strong>Enlace al Mapa</strong>
+                    <a href="{{ guide.map_link }}" target="_blank">Ver en mapa</a>
+                </div>
+                {% endif %}
+                {% if guide.notas %}
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <strong>Notas</strong>
+                    {{ guide.notas }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="stages">
+            <h3>Historial de Estados</h3>
+            {% for stage in stages %}
+            <div class="stage">
+                <div class="stage-header">
+                    <span class="stage-status status-{{ stage.estado|lower }}">{{ stage.get_estado_display }}</span>
+                    <span class="stage-time">{{ stage.timestamp|date:"d/m/Y H:i" }}</span>
+                </div>
+                {% if stage.observaciones %}
+                <p>{{ stage.observaciones }}</p>
+                {% endif %}
+                {% if stage.evidencia_foto %}
+                <div class="stage-photo">
+                    <img src="{{ stage.evidencia_foto.url }}" alt="Evidencia fotográfica">
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="update-form">
+            <h3>Actualizar Estado</h3>
+            {% if next_states %}
+            <div class="form-group">
+                <strong>Acciones rápidas:</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                    {% for estado_valor, estado_label in next_states %}
+                        <button type="button" class="btn btn-secondary" onclick="setNextState('{{ estado_valor }}')">{{ estado_label }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="form-group">
+                <div style="padding: 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; color: #856404;">
+                    Esta guía ya está en estado final y no requiere más acciones.
+                </div>
+            </div>
+            {% endif %}
+            <form method="post" enctype="multipart/form-data" id="updateStateForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.nuevo_estado.id_for_label }}">Nuevo Estado</label>
+                    {{ form.nuevo_estado }}
+                    {% if form.nuevo_estado.errors %}
+                        <div style="color: #dc3545; font-size: 0.9em;">{{ form.nuevo_estado.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.evidencia_foto.id_for_label }}">Evidencia Fotográfica *</label>
+                    {{ form.evidencia_foto }}
+                    {% if form.evidencia_foto.errors %}
+                        <div style="color: #dc3545; font-size: 0.9em;">{{ form.evidencia_foto.errors }}</div>
+                    {% endif %}
+                    <small style="color: #6c757d;">Foto requerida para documentar el cambio de estado</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.notas.id_for_label }}">Notas del Cambio</label>
+                    {{ form.notas }}
+                    {% if form.notas.errors %}
+                        <div style="color: #dc3545; font-size: 0.9em;">{{ form.notas.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Actualizar Estado</button>
+                <a href="{% url 'guide_list' %}" class="btn btn-secondary">Volver a Lista</a>
+            </form>
+        </div>
+        <script>
+            function setNextState(value) {
+                const estadoSelect = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
+                if (estadoSelect) {
+                    estadoSelect.value = value;
+                    estadoSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>

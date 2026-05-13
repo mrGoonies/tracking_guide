@@ -7,4 +7,5 @@ urlpatterns = [
     path('clientes/buscar/', views.search_client_by_rut, name='search_client'),
     path('guias/', views.guide_list, name='guide_list'),
     path('guias/nueva/', views.create_guide, name='create_guide'),
+    path('guias/<int:guide_id>/', views.guide_detail, name='guide_detail'),
 ]

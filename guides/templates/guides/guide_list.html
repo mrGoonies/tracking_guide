@@ -54,6 +54,24 @@
             background-color: #218838;
         }
         
+        .btn-detail {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            margin-top: 10px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-detail:hover {
+            background-color: #0056b3;
+        }
+        
         .notice {
             background-color: #e7f3ff;
             border-left: 4px solid #007bff;
@@ -153,8 +171,50 @@
         </div>
         
         <div class="notice">
-            <strong>Próximamente:</strong> Aquí se listarán todas las guías de despacho del sistema con su estado actual.
+            <strong>Lista de Guías:</strong> Haz clic en una guía para ver detalles y actualizar su estado.
         </div>
+        
+        <form method="get" style="margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <label for="estado_filter" style="font-weight: 600; color: #333;">Filtrar por estado:</label>
+            <select id="estado_filter" name="estado" style="padding: 10px; border-radius: 8px; border: 1px solid #ced4da; font-size: 14px; min-width: 180px;">
+                <option value="">Todos los estados</option>
+                {% for estado, etiqueta in estado_choices %}
+                    <option value="{{ estado }}" {% if estado == estado_filtro %}selected{% endif %}>{{ etiqueta }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn-new" style="padding: 10px 18px;">Filtrar</button>
+            {% if estado_filtro %}
+                <a href="{% url 'guide_list' %}" style="color: #007bff; text-decoration: none; font-weight: 600;">Limpiar filtro</a>
+            {% endif %}
+        </form>
+        
+        {% if guides %}
+            {% for guide in guides %}
+            <div class="guide-card">
+                <div class="guide-header">
+                    <div class="guide-number">📦 Guía #{{ guide.numero_guia }}</div>
+                    <span class="status-badge status-{{ guide.estado|lower }}">{{ guide.get_estado_display }}</span>
+                </div>
+                <div class="guide-info">
+                    <div><strong>Cliente:</strong> {{ guide.cliente.nombre }} ({{ guide.cliente.rut }})</div>
+                    <div><strong>Transportista:</strong>
+                        {% if guide.transportista %}
+                            {{ guide.transportista.get_full_name|default:guide.transportista.username }}
+                        {% else %}
+                            Sin transportista asignado
+                        {% endif %}
+                    </div>
+                    <div><strong>Dirección:</strong> {{ guide.direccion_entrega }}</div>
+                    <div><strong>Creada:</strong> {{ guide.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                </div>
+                <a href="{% url 'guide_detail' guide.id %}" class="btn-detail">Ver Detalle</a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="notice">
+                No hay guías registradas aún. <a href="{% url 'create_guide' %}">Crear primera guía</a>
+            </div>
+        {% endif %}
         
         <a href="{% url 'home' %}">← Volver al inicio</a>
     </div>
