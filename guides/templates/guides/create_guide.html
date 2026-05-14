@@ -353,15 +353,32 @@
             <!-- Sección 4: Transportista -->
             <div class="form-group">
                 <label for="transportista">Transportista (opcional)</label>
-                <select id="transportista" name="transportista">
-                    <option value="">-- Seleccionar transportista --</option>
-                    {% for user in form.transportista.queryset %}
-                    <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.transportista }}
             </div>
+
+            <!-- Sección 5: Vendedor / Asistente Comercial -->
+            <div class="form-group">
+                <label for="{{ form.vendedor.id_for_label }}">Vendedor / Asistente Comercial</label>
+                {{ form.vendedor }}
+                {% if form.vendedor.errors %}
+                <div class="error-message show">
+                    {{ form.vendedor.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+            {% if admin_session %}
+            <div class="form-group">
+                <label for="{{ form.vendedor_nombre.id_for_label }}">Nombre manual del vendedor / asistente</label>
+                {{ form.vendedor_nombre }}
+                {% if form.vendedor_nombre.errors %}
+                <div class="error-message show">
+                    {{ form.vendedor_nombre.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
             
-            <!-- Sección 5: Notas -->
+            <!-- Sección 6: Notas -->
             <div class="form-group">
                 <label for="notas">Observaciones</label>
                 <textarea id="notas" name="notas" 

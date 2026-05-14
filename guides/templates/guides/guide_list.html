@@ -204,6 +204,7 @@
                             Sin transportista asignado
                         {% endif %}
                     </div>
+                    <div><strong>Vendedor / Asistente:</strong> {{ guide.get_vendedor_display }}</div>
                     <div><strong>Dirección:</strong> {{ guide.direccion_entrega }}</div>
                     <div><strong>Creada:</strong> {{ guide.fecha_creacion|date:"d/m/Y H:i" }}</div>
                 </div>

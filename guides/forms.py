@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Client, DispatchGuide
+from django.db.models import Q
+from .models import Client, DispatchGuide, Seller
 
 class ImportClientCSVForm(forms.Form):
     """Formulario para cargar archivo CSV de clientes."""
@@ -30,9 +31,24 @@ class CreateDispatchGuideForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'})
     )
     
+    vendedor = forms.ModelChoiceField(
+        queryset=Seller.objects.filter(activo=True),
+        label='Vendedor / Asistente Comercial',
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    vendedor_nombre = forms.CharField(
+        label='Nombre manual del vendedor / asistente',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Nombre completo',
+            'class': 'form-input'
+        })
+    )
+    
     class Meta:
         model = DispatchGuide
-        fields = ['numero_guia', 'transportista', 'notas']
+        fields = ['numero_guia', 'transportista', 'vendedor', 'vendedor_nombre', 'notas']
         widgets = {
             'numero_guia': forms.TextInput(attrs={
                 'placeholder': 'Número único de la guía',
@@ -48,13 +64,17 @@ class CreateDispatchGuideForm(forms.ModelForm):
             })
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, admin_session=False, **kwargs):
         super().__init__(*args, **kwargs)
         transportistas = User.objects.filter(groups__name='Transportista')
         if transportistas.exists():
             self.fields['transportista'].queryset = transportistas
         else:
             self.fields['transportista'].queryset = User.objects.all()
+
+        # Vendedor ahora usa Seller, no necesita filtrado adicional aquí
+        if not admin_session:
+            self.fields['vendedor_nombre'].widget = forms.HiddenInput()
 
 
 class UpdateGuideStateForm(forms.Form):

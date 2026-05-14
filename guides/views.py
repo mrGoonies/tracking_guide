@@ -168,8 +168,10 @@ def search_client_by_rut(request):
 @login_required
 def create_guide(request):
     """Vista para crear una nueva guía de despacho (mobile-first)."""
+    admin_session = request.user.is_staff
+
     if request.method == 'POST':
-        form = CreateDispatchGuideForm(request.POST)
+        form = CreateDispatchGuideForm(request.POST, admin_session=admin_session)
         
         rut = request.POST.get('rut', '').strip()
         direccion_entrega = request.POST.get('direccion_entrega', '').strip()
@@ -178,18 +180,18 @@ def create_guide(request):
         
         if not rut:
             messages.error(request, 'Debe ingresar el RUT del cliente')
-            return render(request, 'guides/create_guide.html', {'form': form})
+            return render(request, 'guides/create_guide.html', {'form': form, 'admin_session': admin_session})
 
         try:
             cliente = Client.objects.get(rut=rut)
         except Client.DoesNotExist:
             messages.error(request, f'No existe cliente con RUT: {rut}')
-            return render(request, 'guides/create_guide.html', {'form': form})
+            return render(request, 'guides/create_guide.html', {'form': form, 'admin_session': admin_session})
         
         if form.is_valid():
             if not usa_direccion_facturacion and not direccion_entrega:
                 messages.error(request, 'Debe ingresar una dirección de entrega si no usa la de facturación')
-                return render(request, 'guides/create_guide.html', {'form': form})
+                return render(request, 'guides/create_guide.html', {'form': form, 'admin_session': admin_session})
             
             guide = form.save(commit=False)
             guide.cliente = cliente
@@ -202,6 +204,8 @@ def create_guide(request):
             if map_link:
                 guide.map_link = map_link
             
+            if not admin_session:
+                guide.vendedor_nombre = None
             guide.usa_direccion_facturacion = usa_direccion_facturacion
             guide.save()
             
@@ -214,10 +218,11 @@ def create_guide(request):
             messages.success(request, f'✓ Guía {guide.numero_guia} creada exitosamente')
             return redirect('guide_list')
     else:
-        form = CreateDispatchGuideForm()
+        form = CreateDispatchGuideForm(admin_session=admin_session)
     
     context = {
-        'form': form
+        'form': form,
+        'admin_session': admin_session,
     }
     return render(request, 'guides/create_guide.html', context)
 

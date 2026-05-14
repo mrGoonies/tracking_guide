@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
-from .models import Client, DispatchGuide, GuideStage
+from .models import Client, DispatchGuide, GuideStage, Seller
 
 
 class GuideStageInline(admin.TabularInline):
@@ -10,6 +10,23 @@ class GuideStageInline(admin.TabularInline):
     extra = 0
     readonly_fields = ('timestamp',)
     fields = ('estado', 'timestamp', 'foto', 'observaciones')
+
+
+@admin.register(Seller)
+class SellerAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'activo', 'fecha_creacion')
+    list_filter = ('activo', 'fecha_creacion')
+    search_fields = ('nombre',)
+    readonly_fields = ('fecha_creacion',)
+    fieldsets = (
+        ('Información', {
+            'fields': ('nombre', 'activo')
+        }),
+        ('Auditoría', {
+            'fields': ('fecha_creacion',),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 @admin.register(Client)
@@ -34,7 +51,7 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(DispatchGuide)
 class DispatchGuideAdmin(admin.ModelAdmin):
-    list_display = ('numero_guia', 'cliente', 'estado', 'transportista', 'fecha_creacion')
+    list_display = ('numero_guia', 'cliente', 'estado', 'transportista', 'get_vendedor_display', 'fecha_creacion')
     list_filter = ('estado', 'fecha_creacion')
     search_fields = ('numero_guia', 'cliente__nombre', 'cliente__rut')
     readonly_fields = ('fecha_creacion', 'fecha_actualizacion')
@@ -47,7 +64,7 @@ class DispatchGuideAdmin(admin.ModelAdmin):
             'fields': ('usa_direccion_facturacion', 'direccion_entrega', 'map_link')
         }),
         ('Asignación', {
-            'fields': ('transportista',)
+            'fields': ('transportista', 'vendedor', 'vendedor_nombre')
         }),
         ('Observaciones', {
             'fields': ('notas',)

@@ -18,6 +18,21 @@ class Client(models.Model):
         return f"{self.rut} - {self.nombre}"
 
 
+class Seller(models.Model):
+    """Modelo para vendedores y asistentes comerciales."""
+    nombre = models.CharField(max_length=255, unique=True)
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Vendedor / Asistente"
+        verbose_name_plural = "Vendedores / Asistentes"
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
 class DispatchGuide(models.Model):
     """Modelo para guías de despacho."""
     STATUS_CHOICES = [
@@ -35,10 +50,19 @@ class DispatchGuide(models.Model):
     direccion_entrega = models.TextField()
     map_link = models.URLField(blank=True, null=True)
     transportista = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='guias_asignadas')
+    vendedor = models.ForeignKey(Seller, on_delete=models.SET_NULL, null=True, blank=True, related_name='guias_emitidas')
+    vendedor_nombre = models.CharField(max_length=255, blank=True, null=True)
     estado = models.CharField(max_length=20, choices=STATUS_CHOICES, default='emitida')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
     notas = models.TextField(blank=True, null=True)
+
+    def get_vendedor_display(self):
+        if self.vendedor_nombre:
+            return self.vendedor_nombre
+        if self.vendedor:
+            return self.vendedor.nombre
+        return 'Sin vendedor asignado'
 
     class Meta:
         verbose_name = "Guía de Despacho"

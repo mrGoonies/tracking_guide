@@ -217,6 +217,10 @@
                         Sin transportista asignado
                     {% endif %}
                 </div>
+                <div class="info-item">
+                    <strong>Vendedor / Asistente</strong>
+                    {{ guide.get_vendedor_display }}
+                </div>
                 {% if guide.map_link %}
                 <div class="info-item">
                     <strong>Enlace al Mapa</strong>
