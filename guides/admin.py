@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.models import User
 from .models import Client, DispatchGuide, GuideStage
 
 
@@ -69,5 +71,47 @@ class GuideStageAdmin(admin.ModelAdmin):
         }),
         ('Detalles', {
             'fields': ('foto', 'observaciones')
+        }),
+    )
+
+
+admin.site.unregister(User)
+
+@admin.register(User)
+class CustomUserAdmin(DjangoUserAdmin):
+    list_display = ('username', 'email', 'get_full_name', 'is_active', 'is_staff')
+    list_filter = ('is_active', 'is_staff', 'groups', 'date_joined')
+    search_fields = ('username', 'first_name', 'last_name', 'email')
+    ordering = ('-date_joined',)
+    
+    fieldsets = (
+        ('Credenciales', {
+            'fields': ('username', 'password')
+        }),
+        ('Información Personal', {
+            'fields': ('first_name', 'last_name', 'email')
+        }),
+        ('Permisos', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'classes': ('collapse',)
+        }),
+        ('Información de Sesión', {
+            'fields': ('last_login', 'date_joined'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2'),
+        }),
+        ('Información Personal', {
+            'classes': ('wide',),
+            'fields': ('first_name', 'last_name', 'email'),
+        }),
+        ('Permisos', {
+            'classes': ('wide',),
+            'fields': ('is_active', 'is_staff', 'groups'),
         }),
     )
