@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
+from io import BytesIO
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -7,10 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+from openpyxl import Workbook
 from .forms import ImportClientCSVForm, CreateDispatchGuideForm, UpdateGuideStateForm
 from .utils import import_clients_from_csv
 from .models import Client, DispatchGuide, GuideStage
@@ -81,7 +83,7 @@ def import_clients(request):
 @login_required
 def guide_list(request):
     estado_filtro = request.GET.get('estado', '').strip()
-    guides = DispatchGuide.objects.select_related('cliente', 'transportista').order_by('-fecha_creacion')
+    guides = DispatchGuide.objects.select_related('cliente', 'transportista', 'vendedor').order_by('-fecha_creacion')
     
     if estado_filtro:
         guides = guides.filter(estado=estado_filtro)
@@ -92,6 +94,78 @@ def guide_list(request):
         'estado_choices': DispatchGuide.STATUS_CHOICES,
     }
     return render(request, 'guides/guide_list.html', context)
+
+
+@login_required
+def export_route_planning(request):
+    """Exporta un archivo Excel con la planificación de rutas."""
+    guides = DispatchGuide.objects.select_related('cliente', 'transportista', 'vendedor').order_by('fecha_creacion')
+
+    # Aplicar filtro por rango de fechas (fecha_envio)
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    try:
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            guides = guides.filter(fecha_envio__gte=start_date)
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            guides = guides.filter(fecha_envio__lte=end_date)
+    except ValueError:
+        # Ignorar filtros mal formateados
+        pass
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Planificación Rutas'
+    headers = [
+        'Nota de Venta (NV)',
+        'Creacion de la NV',
+        'Fecha de Envio',
+        'Rut Cliente',
+        'Nombre cliente',
+        'Direccion de despacho',
+        'Persona que creo la NV',
+        'Transportista asignado para esa nota de venta',
+        'Fecha de despacho',
+        'Numero de guia'
+    ]
+    ws.append(headers)
+
+    for guide in guides:
+        vendedor_nombre = guide.vendedor_nombre or (guide.vendedor.nombre if guide.vendedor else '')
+        transportista_nombre = guide.transportista.get_full_name() if guide.transportista else ''
+        ws.append([
+            guide.nv or '',
+            guide.nv_fecha_creacion or '',
+            guide.fecha_envio or '',
+            guide.cliente.rut,
+            guide.cliente.nombre,
+            guide.direccion_entrega,
+            vendedor_nombre,
+            transportista_nombre,
+            guide.fecha_despacho or '',
+            guide.numero_guia,
+        ])
+
+    for i, _ in enumerate(headers, start=1):
+        column_letter = ws.cell(row=1, column=i).column_letter
+        max_length = max(
+            len(str(cell.value)) if cell.value is not None else 0
+            for cell in ws[column_letter]
+        )
+        ws.column_dimensions[column_letter].width = min(max_length + 4, 40)
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=planificacion_rutas.xlsx'
+    return response
 
 
 @login_required

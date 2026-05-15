@@ -337,6 +337,36 @@
                 </div>
                 {% endif %}
             </div>
+
+            <div class="form-group">
+                <label for="nv_fecha_creacion">Fecha de creación NV (manual)</label>
+                {{ form.nv_fecha_creacion }}
+                {% if form.nv_fecha_creacion.errors %}
+                <div class="error-message show">
+                    {{ form.nv_fecha_creacion.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.fecha_envio.id_for_label }}">Fecha de Envío</label>
+                {{ form.fecha_envio }}
+                {% if form.fecha_envio.errors %}
+                <div class="error-message show">
+                    {{ form.fecha_envio.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.fecha_despacho.id_for_label }}">Fecha de Despacho</label>
+                {{ form.fecha_despacho }}
+                {% if form.fecha_despacho.errors %}
+                <div class="error-message show">
+                    {{ form.fecha_despacho.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
             
             <!-- Sección 3: Dirección de Entrega -->
             <div class="form-group">

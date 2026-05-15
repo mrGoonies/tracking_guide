@@ -165,9 +165,17 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
+            <div class="header">
             <h1>📋 Guías de Despacho</h1>
-            <a href="{% url 'create_guide' %}" class="btn-new">+ Nueva Guía</a>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <a href="{% url 'create_guide' %}" class="btn-new">+ Nueva Guía</a>
+                <form method="get" action="{% url 'export_route_planning' %}" style="display:flex; gap:8px; align-items:center;">
+                    <label style="font-weight:600; font-size:0.9rem;">Filtrar por Fecha de Envío:</label>
+                    <input type="date" name="start_date" value="{{ request.GET.start_date|default:'' }}" class="form-input" style="height:36px;">
+                    <input type="date" name="end_date" value="{{ request.GET.end_date|default:'' }}" class="form-input" style="height:36px;">
+                    <button type="submit" class="btn-new">Exportar Excel</button>
+                </form>
+            </div>
         </div>
         
         <div class="notice">

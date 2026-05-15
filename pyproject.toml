@@ -4,4 +4,6 @@ version = "0.1.0"
 description = "internal app for manage guides"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "openpyxl>=3.1.5",
+]
