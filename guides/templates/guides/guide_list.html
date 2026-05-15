@@ -196,6 +196,7 @@
                     <span class="status-badge status-{{ guide.estado|lower }}">{{ guide.get_estado_display }}</span>
                 </div>
                 <div class="guide-info">
+                    <div><strong>Nota de Venta:</strong> {{ guide.nv|default:"N/A" }}</div>
                     <div><strong>Cliente:</strong> {{ guide.cliente.nombre }} ({{ guide.cliente.rut }})</div>
                     <div><strong>Transportista:</strong>
                         {% if guide.transportista %}

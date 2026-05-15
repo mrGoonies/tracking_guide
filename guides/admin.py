@@ -51,14 +51,14 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(DispatchGuide)
 class DispatchGuideAdmin(admin.ModelAdmin):
-    list_display = ('numero_guia', 'cliente', 'estado', 'transportista', 'get_vendedor_display', 'fecha_creacion')
+    list_display = ('numero_guia', 'nv', 'cliente', 'estado', 'transportista', 'get_vendedor_display', 'fecha_creacion')
     list_filter = ('estado', 'fecha_creacion')
-    search_fields = ('numero_guia', 'cliente__nombre', 'cliente__rut')
+    search_fields = ('numero_guia', 'nv', 'cliente__nombre', 'cliente__rut')
     readonly_fields = ('fecha_creacion', 'fecha_actualizacion')
     inlines = [GuideStageInline]
     fieldsets = (
         ('Información de Guía', {
-            'fields': ('numero_guia', 'cliente', 'estado')
+            'fields': ('numero_guia', 'nv', 'cliente', 'estado')
         }),
         ('Dirección de Entrega', {
             'fields': ('usa_direccion_facturacion', 'direccion_entrega', 'map_link')

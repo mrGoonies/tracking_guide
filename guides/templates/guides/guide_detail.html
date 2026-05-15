@@ -198,6 +198,10 @@
             <h2>Información de la Guía</h2>
             <div class="info-grid">
                 <div class="info-item">
+                    <strong>Nota de Venta</strong>
+                    {{ guide.nv|default:"N/A" }}
+                </div>
+                <div class="info-item">
                     <strong>Cliente</strong>
                     {{ guide.cliente.nombre }} ({{ guide.cliente.rut }})
                 </div>

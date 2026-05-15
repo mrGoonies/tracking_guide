@@ -323,6 +323,20 @@
                 </div>
                 {% endif %}
             </div>
+
+            <!-- Sección 2.1: Nota de Venta -->
+            <div class="form-group">
+                <label for="nv">Nota de Venta (NV)</label>
+                <input type="text" id="nv" name="nv" 
+                       placeholder="Ej: NV-2025-001"
+                       value="{{ form.nv.value|default:'' }}"
+                       class="form-input">
+                {% if form.nv.errors %}
+                <div class="error-message show">
+                    {{ form.nv.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
             
             <!-- Sección 3: Dirección de Entrega -->
             <div class="form-group">

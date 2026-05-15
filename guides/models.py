@@ -45,6 +45,7 @@ class DispatchGuide(models.Model):
     ]
 
     numero_guia = models.CharField(max_length=100, unique=True)
+    nv = models.CharField(max_length=100, blank=True, null=True, verbose_name='Nota de Venta')
     cliente = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='guias')
     usa_direccion_facturacion = models.BooleanField(default=True)
     direccion_entrega = models.TextField()
