@@ -47,7 +47,7 @@ class CreateDispatchGuideForm(forms.ModelForm):
     
     class Meta:
         model = DispatchGuide
-        fields = ['numero_guia', 'nv', 'nv_fecha_creacion', 'fecha_envio', 'fecha_despacho', 'transportista', 'vendedor', 'vendedor_nombre', 'notas']
+        fields = ['numero_guia', 'nv', 'nv_fecha_creacion', 'fecha_despacho', 'transportista', 'vendedor', 'vendedor_nombre', 'notas']
         widgets = {
             'numero_guia': forms.TextInput(attrs={
                 'placeholder': 'Número único de la guía',
@@ -58,10 +58,6 @@ class CreateDispatchGuideForm(forms.ModelForm):
                 'class': 'form-input'
             }),
             'nv_fecha_creacion': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-input'
-            }),
-            'fecha_envio': forms.DateInput(attrs={
                 'type': 'date',
                 'class': 'form-input'
             }),

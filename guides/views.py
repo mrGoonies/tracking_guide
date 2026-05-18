@@ -337,6 +337,8 @@ def guide_detail(request, guide_id):
             )
             
             guide.estado = nuevo_estado
+            if nuevo_estado in ['entregada', 'rechazada'] and not guide.fecha_envio:
+                guide.fecha_envio = timezone.localdate()
             guide.save()
             
             messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
