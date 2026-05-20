@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: tracking-guide
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn tracking_guide.wsgi --log-file -
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tracking-guide-db
+          property: connectionString
+      - key: CLOUDINARY_URL
+        sync: false
+
+databases:
+  - name: tracking-guide-db
+    databaseName: tracking_guide
+    user: tracking_guide

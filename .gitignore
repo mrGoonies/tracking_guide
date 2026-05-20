@@ -19,3 +19,9 @@ media/
 
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+
+# Collected static files
+staticfiles/

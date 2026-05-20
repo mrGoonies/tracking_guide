@@ -91,7 +91,7 @@ class GuideStage(models.Model):
     guia = models.ForeignKey(DispatchGuide, on_delete=models.CASCADE, related_name='etapas')
     estado = models.CharField(max_length=20, choices=STATUS_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
-    foto = models.ImageField(upload_to='guide_photos/%Y/%m/%d/', blank=True, null=True)
+    foto = models.ImageField(upload_to='tracking/guide_photos/%Y/%m/%d/', blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
