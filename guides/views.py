@@ -14,12 +14,28 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from openpyxl import Workbook
 from .decorators import admin_or_coordinador_required
-from .forms import ImportClientCSVForm, CreateDispatchGuideForm, UpdateGuideStateForm
-from .utils import import_clients_from_csv, get_home_url_for_user
+from .forms import CreateDispatchGuideForm, UpdateGuideStateForm
+from .utils import get_home_url_for_user, is_transportista, is_coordinador
 from .models import Client, DispatchGuide, GuideStage
 
 def home(request):
-    return render(request, 'guides/home.html')
+    if request.user.is_authenticated:
+        return redirect(get_home_url_for_user(request.user))
+    return redirect('login')
+
+
+@admin_or_coordinador_required
+def hub(request):
+    resumen = {
+        'total_guias': DispatchGuide.objects.count(),
+        'en_ruta': DispatchGuide.objects.filter(estado='en_ruta').count(),
+        'pendientes': DispatchGuide.objects.filter(estado__in=['emitida', 'asignada']).count(),
+        'entregadas_hoy': DispatchGuide.objects.filter(
+            estado='entregada',
+            fecha_actualizacion__date=timezone.localdate()
+        ).count(),
+    }
+    return render(request, 'guides/hub.html', {'resumen': resumen})
 
 
 def user_login(request):
@@ -45,42 +61,6 @@ def user_logout(request):
     return redirect('home')
 
 
-@admin_or_coordinador_required
-def import_clients(request):
-    """Vista para importar clientes desde CSV."""
-    if request.method == 'POST':
-        form = ImportClientCSVForm(request.POST, request.FILES)
-        if form.is_valid():
-            csv_file = request.FILES['csv_file']
-            
-            # Importar clientes
-            results = import_clients_from_csv(csv_file)
-            
-            # Mostrar mensajes según resultados
-            if results['success'] > 0:
-                messages.success(request, f"✓ {results['success']} cliente(s) nuevo(s) importado(s)")
-            if results['updated'] > 0:
-                messages.info(request, f"ℹ {results['updated']} cliente(s) actualizado(s)")
-            if results['errors']:
-                for error in results['errors']:
-                    messages.error(request, f"✗ {error}")
-            
-            # Mostrar resumen
-            if not results['errors']:
-                messages.success(request, f"Importación completada: {results['total']} registros procesados")
-            
-            # Redirigir para evitar reenvío de formulario
-            return redirect('import_clients')
-    else:
-        form = ImportClientCSVForm()
-    
-    # Mostrar estadísticas de clientes
-    total_clients = Client.objects.count()
-    context = {
-        'form': form,
-        'total_clients': total_clients
-    }
-    return render(request, 'guides/import_clients.html', context)
 
 @admin_or_coordinador_required
 def guide_list(request):
@@ -245,7 +225,7 @@ def search_client_by_rut(request):
 @admin_or_coordinador_required
 def create_guide(request):
     """Vista para crear una nueva guía de despacho (mobile-first)."""
-    admin_session = request.user.is_staff
+    admin_session = request.user.is_staff or is_coordinador(request.user)
 
     if request.method == 'POST':
         form = CreateDispatchGuideForm(request.POST, admin_session=admin_session)
@@ -305,6 +285,29 @@ def create_guide(request):
 
 
 @login_required
+def transportista_guides(request):
+    """Vista mobile-first para que el transportista vea sus guías asignadas."""
+    if not is_transportista(request.user) and not request.user.is_staff:
+        return redirect('guide_list')
+
+    filtro = request.GET.get('filtro', 'activas')
+    guides = DispatchGuide.objects.filter(
+        transportista=request.user
+    ).select_related('cliente').order_by('fecha_despacho', '-fecha_creacion')
+
+    if filtro == 'activas':
+        guides = guides.filter(estado__in=['emitida', 'asignada', 'en_ruta'])
+    else:
+        guides = guides.filter(estado__in=['entregada', 'rechazada', 'cerrada'])
+
+    context = {
+        'guides': guides,
+        'filtro': filtro,
+    }
+    return render(request, 'guides/transportista_guides.html', context)
+
+
+@login_required
 def guide_detail(request, guide_id):
     """Vista para ver y actualizar el estado de una guía específica."""
     try:
@@ -314,7 +317,6 @@ def guide_detail(request, guide_id):
         return redirect(get_home_url_for_user(request.user))
 
     # Transportista solo puede acceder a sus propias guías
-    from .utils import is_transportista
     if is_transportista(request.user) and guide.transportista != request.user:
         messages.error(request, 'No tienes acceso a esta guía.')
         return redirect('transportista_guides')
@@ -355,10 +357,18 @@ def guide_detail(request, guide_id):
     else:
         form = UpdateGuideStateForm()
     
+    template = (
+        'guides/transportista_guide_detail.html'
+        if is_transportista(request.user)
+        else 'guides/guide_detail.html'
+    )
+    back_url = 'transportista_guides' if is_transportista(request.user) else 'guide_list'
+
     context = {
         'guide': guide,
         'stages': stages,
         'form': form,
         'next_states': next_states,
+        'back_url': back_url,
     }
-    return render(request, 'guides/guide_detail.html', context)
+    return render(request, template, context)

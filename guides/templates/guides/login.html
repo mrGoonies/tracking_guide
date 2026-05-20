@@ -3,111 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión</title>
+    <title>Ingresar — Irritec</title>
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0;
+            background: #f0f4f1;
             padding: 20px;
         }
-        .login-card {
+
+        /* Card */
+        .card {
             width: 100%;
             max-width: 420px;
-            background: white;
-            padding: 30px;
+            background: #fff;
             border-radius: 16px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0,0,0,0.06);
         }
-        h1 {
-            margin-bottom: 10px;
-            color: #333;
+
+        /* Brand header */
+        .brand {
+            background: #2d7a35;
+            padding: 32px 36px 28px;
+            text-align: center;
         }
-        p {
-            margin-bottom: 24px;
-            color: #555;
+
+        .brand-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 6px;
         }
-        label {
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .brand-name {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-tagline {
+            font-size: 12px;
+            color: rgba(255,255,255,0.75);
+            font-style: italic;
+            letter-spacing: 0.3px;
+        }
+
+        /* Form area */
+        .form-area {
+            padding: 32px 36px 28px;
+        }
+
+        .form-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .form-subtitle {
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 28px;
+        }
+
+        /* Error global */
+        .alert-error {
+            background: #fdf2f2;
+            border: 1px solid #f5c6c6;
+            color: #c0392b;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        /* Field */
+        .field { margin-bottom: 20px; }
+
+        .field label {
             display: block;
-            margin-bottom: 8px;
+            font-size: 13px;
             font-weight: 600;
-            color: #333;
+            color: #444;
+            margin-bottom: 6px;
         }
-        input {
+
+        .field input {
             width: 100%;
             padding: 12px 14px;
-            border: 1px solid #d1d5db;
+            border: 1.5px solid #d1d5db;
             border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 18px;
-            color: #333;
+            font-size: 15px;
+            color: #1a1a1a;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            outline: none;
+            -webkit-appearance: none;
         }
-        button {
+
+        .field input:focus {
+            border-color: #2d7a35;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(45, 122, 53, 0.12);
+        }
+
+        .field-error {
+            font-size: 12px;
+            color: #c0392b;
+            margin-top: 5px;
+        }
+
+        /* Submit button */
+        .btn-submit {
             width: 100%;
             padding: 14px;
+            background: #2d7a35;
+            color: #fff;
             border: none;
             border-radius: 10px;
-            background: #667eea;
-            color: white;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            letter-spacing: 0.2px;
+            margin-top: 4px;
         }
-        .message {
-            margin-bottom: 16px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            background: #f8d7da;
-            color: #842029;
-            border: 1px solid #f5c2c7;
-        }
-        .links {
-            margin-top: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .links a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
+
+        .btn-submit:hover  { background: #235f29; }
+        .btn-submit:active { transform: scale(0.99); }
+
+        /* Copyright */
+        .copyright {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 11px;
+            color: #aaa;
         }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <h1>Iniciar Sesión</h1>
-        <p>Accede para gestionar guías de despacho y subir evidencia.</p>
 
-        {% if form.non_field_errors %}
-        <div class="message">
-            {{ form.non_field_errors }}
+    <div>
+        <div class="card">
+
+            <div class="brand">
+                <div class="brand-logo">
+                    <div class="brand-icon">🌿</div>
+                    <span class="brand-name">irritec</span>
+                </div>
+                <div class="brand-tagline">don't wait for rain</div>
+            </div>
+
+            <div class="form-area">
+                <div class="form-title">Bienvenido</div>
+                <div class="form-subtitle">Ingresa tus credenciales para continuar</div>
+
+                {% if form.non_field_errors %}
+                <div class="alert-error">
+                    <span>⚠</span>
+                    <span>{{ form.non_field_errors.0 }}</span>
+                </div>
+                {% endif %}
+
+                <form method="post" autocomplete="on">
+                    {% csrf_token %}
+
+                    <div class="field">
+                        <label for="id_username">Usuario</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <div class="field-error">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label for="id_password">Contraseña</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <div class="field-error">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn-submit">Ingresar</button>
+                </form>
+            </div>
+
         </div>
-        {% endif %}
 
-        <form method="post">
-            {% csrf_token %}
-            <label for="id_username">Usuario</label>
-            {{ form.username }}
-            {% if form.username.errors %}
-            <div class="message">{{ form.username.errors.0 }}</div>
-            {% endif %}
-
-            <label for="id_password">Contraseña</label>
-            {{ form.password }}
-            {% if form.password.errors %}
-            <div class="message">{{ form.password.errors.0 }}</div>
-            {% endif %}
-
-            <button type="submit">Ingresar</button>
-        </form>
-
-        <div class="links">
-            <a href="{% url 'home' %}">Volver al inicio</a>
-        </div>
+        <div class="copyright">Irritec Chile &copy; {% now "Y" %} — Sistema de Trazabilidad</div>
     </div>
+
 </body>
 </html>

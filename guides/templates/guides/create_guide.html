@@ -3,532 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nueva Guía de Despacho</title>
+    <title>Nueva Guía — Irritec</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f0f4f1;
             min-height: 100vh;
-            padding: 10px;
         }
-        
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 20px;
+
+        /* Topbar */
+        .topbar {
+            background: #2d7a35;
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
-        
-        .header {
-            margin-bottom: 30px;
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
-        
-        h1 {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 8px;
-        }
-        
-        .subtitle {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
+
+        .topbar-back {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.12);
+            transition: background 0.2s;
         }
-        
-        .input-group {
-            position: relative;
+
+        .topbar-back:hover { background: rgba(255,255,255,0.22); }
+
+        .topbar-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .topbar-brand {
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        /* Page layout */
+        .page {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 28px 20px 48px;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .page-sub {
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* Messages */
+        .messages { margin-bottom: 20px; }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .alert-error   { background: #fdf2f2; border: 1px solid #f5c6c6; color: #c0392b; }
+        .alert-success { background: #d1e7dd; border: 1px solid #b7dfca; color: #0f5132; }
+        .alert-info    { background: #cfe2ff; border: 1px solid #b6d4fe; color: #084298; }
+
+        /* Section card */
+        .section {
+            background: #fff;
+            border-radius: 14px;
+            padding: 22px 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: #2d7a35;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e8f5e9;
+        }
+
+        /* Fields */
+        .field { margin-bottom: 18px; }
+        .field:last-child { margin-bottom: 0; }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .required { color: #c0392b; }
+
+        .field input[type="text"],
+        .field input[type="url"],
+        .field input[type="date"],
+        .field select,
+        .field textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1a1a1a;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            border-color: #2d7a35;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(45,122,53,0.10);
+        }
+
+        .field textarea { resize: vertical; min-height: 80px; }
+
+        .field-error {
+            font-size: 12px;
+            color: #c0392b;
+            margin-top: 5px;
+        }
+
+        .field-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* RUT search */
+        .rut-row {
             display: flex;
             gap: 8px;
         }
-        
-        input[type="text"],
-        input[type="url"],
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            font-family: inherit;
-            transition: border-color 0.3s;
-        }
-        
-        input[type="text"]:focus,
-        input[type="url"]:focus,
-        input[type="number"]:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        
+
+        .rut-row input { flex: 1; }
+
         .btn-search {
-            padding: 12px 16px;
-            background-color: #667eea;
-            color: white;
+            padding: 11px 18px;
+            background: #2d7a35;
+            color: #fff;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 16px;
             white-space: nowrap;
-            transition: background-color 0.3s;
+            transition: background 0.2s;
+            flex-shrink: 0;
         }
-        
-        .btn-search:hover {
-            background-color: #5568d3;
+
+        .btn-search:hover  { background: #235f29; }
+        .btn-search:active { transform: scale(0.98); }
+
+        /* Client result */
+        .client-result {
+            margin-top: 12px;
+            padding: 14px 16px;
+            background: #e8f5e9;
+            border: 1.5px solid #a5d6a7;
+            border-radius: 10px;
+            display: none;
         }
-        
-        .btn-search:active {
-            transform: scale(0.98);
+
+        .client-result.show { display: block; }
+
+        .client-result-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1b5e20;
+            margin-bottom: 4px;
         }
-        
+
+        .client-result-address {
+            font-size: 13px;
+            color: #2e7d32;
+            line-height: 1.4;
+        }
+
+        .client-not-found {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #fdf2f2;
+            border: 1.5px solid #f5c6c6;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #c0392b;
+            display: none;
+        }
+
+        .client-not-found.show { display: block; }
+
+        /* Loading */
         .loading {
             display: none;
-            text-align: center;
-            padding: 10px;
-            color: #667eea;
+            font-size: 13px;
+            color: #2d7a35;
+            margin-top: 10px;
+            padding: 8px 0;
         }
-        
-        .loading.show {
-            display: block;
-        }
-        
-        .client-info {
-            background-color: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-            display: none;
-        }
-        
-        .client-info.show {
-            display: block;
-        }
-        
-        .client-info p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #333;
-        }
-        
-        .client-info strong {
-            color: #667eea;
-        }
-        
-        .error-message {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            padding: 12px;
-            margin: 10px 0;
-            color: #721c24;
-            display: none;
-        }
-        
-        .error-message.show {
-            display: block;
-        }
-        
-        .checkbox-group {
+
+        .loading.show { display: block; }
+
+        /* Checkbox */
+        .checkbox-row {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-        
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
             cursor: pointer;
+            padding: 12px 14px;
+            background: #fafafa;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            transition: border-color 0.2s;
         }
-        
-        .conditional-field {
-            display: none;
+
+        .checkbox-row:has(input:checked) {
+            border-color: #2d7a35;
+            background: #e8f5e9;
         }
-        
-        .conditional-field.show {
-            display: block;
+
+        .checkbox-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #2d7a35;
+            cursor: pointer;
+            flex-shrink: 0;
         }
-        
-        .messages {
-            margin: 20px 0;
+
+        .checkbox-row span {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
         }
-        
-        .message {
-            padding: 12px 16px;
-            margin: 8px 0;
-            border-radius: 4px;
-            border-left: 4px solid;
-        }
-        
-        .message.error {
-            background-color: #f8d7da;
-            border-color: #dc3545;
-            color: #721c24;
-        }
-        
-        .button-group {
+
+        .conditional-field { display: none; }
+        .conditional-field.show { display: block; margin-top: 14px; }
+
+        /* Actions */
+        .actions {
             display: flex;
-            gap: 10px;
-            margin-top: 30px;
+            gap: 12px;
+            margin-top: 8px;
         }
-        
+
         .btn-submit {
             flex: 1;
             padding: 14px;
-            background-color: #28a745;
-            color: white;
+            background: #2d7a35;
+            color: #fff;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background 0.2s, transform 0.1s;
         }
-        
-        .btn-submit:hover {
-            background-color: #218838;
-        }
-        
-        .btn-submit:active {
-            transform: scale(0.98);
-        }
-        
+
+        .btn-submit:hover  { background: #235f29; }
+        .btn-submit:active { transform: scale(0.99); }
+
         .btn-cancel {
-            flex: 1;
-            padding: 14px;
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            flex: 0 0 auto;
+            padding: 14px 24px;
+            background: #fff;
+            color: #555;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
             text-align: center;
-            transition: background-color 0.3s;
+            transition: border-color 0.2s, color 0.2s;
         }
-        
-        .btn-cancel:hover {
-            background-color: #5a6268;
-        }
-        
-        .required {
-            color: #dc3545;
-        }
-        
-        @media (max-width: 480px) {
-            .container {
-                padding: 16px;
-            }
-            
-            h1 {
-                font-size: 20px;
-            }
-            
-            .input-group {
-                flex-direction: column;
-            }
-            
-            .btn-search {
-                width: 100%;
-            }
+
+        .btn-cancel:hover { border-color: #999; color: #333; }
+
+        /* Responsive */
+        @media (max-width: 520px) {
+            .field-row { grid-template-columns: 1fr; }
+            .section { padding: 18px 16px; }
+            .actions { flex-direction: column-reverse; }
+            .btn-cancel { flex: 1; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📦 Nueva Guía de Despacho</h1>
-            <p class="subtitle">Registra una nueva guía en el sistema</p>
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="{% url 'hub' %}" class="topbar-back">← Inicio</a>
+            <span class="topbar-title">Nueva Guía</span>
         </div>
-        
+        <span class="topbar-brand">irritec</span>
+    </div>
+
+    <div class="page">
+
+        <div class="page-header">
+            <div class="page-title">Nueva Guía de Despacho</div>
+            <div class="page-sub">Completa los datos para registrar la guía en el sistema</div>
+        </div>
+
         {% if messages %}
         <div class="messages">
             {% for message in messages %}
-            <div class="message {{ message.tags }}">
-                {{ message }}
-            </div>
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
             {% endfor %}
         </div>
         {% endif %}
-        
+
         <form method="post" id="guideForm">
             {% csrf_token %}
-            
-            <!-- Sección 1: Búsqueda de Cliente -->
-            <div class="form-group">
-                <label for="rut">RUT del Cliente <span class="required">*</span></label>
-                <div class="input-group">
-                    <input type="text" id="rut" name="rut" placeholder="Ej: 12345678-9" 
-                           value="{{ form.rut.value|default:'' }}" required>
-                    <button type="button" class="btn-search" id="btnSearch">Buscar</button>
+
+            <!-- Cliente -->
+            <div class="section">
+                <div class="section-title">Cliente</div>
+
+                <div class="field">
+                    <label for="rut">RUT del Cliente <span class="required">*</span></label>
+                    <div class="rut-row">
+                        <input type="text" id="rut" name="rut"
+                               placeholder="Ej: 12345678-9"
+                               value="{{ form.rut.value|default:'' }}"
+                               autocomplete="off">
+                        <button type="button" class="btn-search" id="btnSearch">Buscar</button>
+                    </div>
+                    {% if form.rut.errors %}
+                    <div class="field-error">{{ form.rut.errors.0 }}</div>
+                    {% endif %}
                 </div>
-                {% if form.rut.errors %}
-                <div class="error-message show">
-                    {{ form.rut.errors.0 }}
+
+                <div class="loading" id="loading">Buscando cliente...</div>
+
+                <div class="client-result" id="clientInfo">
+                    <div class="client-result-name" id="clientNombre"></div>
+                    <div class="client-result-address" id="clientDireccion"></div>
                 </div>
-                {% endif %}
+
+                <div class="client-not-found" id="clientNotFound">
+                    Cliente no encontrado. Verifica el RUT ingresado.
+                </div>
             </div>
-            
-            <!-- Indicador de carga -->
-            <div class="loading" id="loading">
-                Buscando cliente...
+
+            <!-- Datos de la guía -->
+            <div class="section">
+                <div class="section-title">Datos de la Guía</div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="numero_guia">N° de Guía <span class="required">*</span></label>
+                        <input type="text" id="numero_guia" name="numero_guia"
+                               placeholder="Ej: G-2025-001"
+                               value="{{ form.numero_guia.value|default:'' }}">
+                        {% if form.numero_guia.errors %}
+                        <div class="field-error">{{ form.numero_guia.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label for="nv">Nota de Venta (NV)</label>
+                        <input type="text" id="nv" name="nv"
+                               placeholder="Ej: NV-2025-001"
+                               value="{{ form.nv.value|default:'' }}">
+                        {% if form.nv.errors %}
+                        <div class="field-error">{{ form.nv.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="{{ form.nv_fecha_creacion.id_for_label }}">Fecha creación NV</label>
+                        {{ form.nv_fecha_creacion }}
+                        {% if form.nv_fecha_creacion.errors %}
+                        <div class="field-error">{{ form.nv_fecha_creacion.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label for="{{ form.fecha_despacho.id_for_label }}">Fecha de Despacho</label>
+                        {{ form.fecha_despacho }}
+                        {% if form.fecha_despacho.errors %}
+                        <div class="field-error">{{ form.fecha_despacho.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            
-            <!-- Información del cliente encontrado -->
-            <div class="client-info" id="clientInfo">
-                <p><strong>Cliente:</strong> <span id="clientNombre"></span></p>
-                <p><strong>Dirección de facturación:</strong></p>
-                <p id="clientDireccion" style="font-size: 13px; white-space: pre-wrap;"></p>
-            </div>
-            
-            <!-- Sección 2: Número de Guía -->
-            <div class="form-group">
-                <label for="numero_guia">Número de Guía <span class="required">*</span></label>
-                <input type="text" id="numero_guia" name="numero_guia" 
-                       placeholder="Ej: G-2025-001" required
-                       value="{{ form.numero_guia.value|default:'' }}">
-                {% if form.numero_guia.errors %}
-                <div class="error-message show">
-                    {{ form.numero_guia.errors.0 }}
+
+            <!-- Asignación -->
+            <div class="section">
+                <div class="section-title">Asignación</div>
+
+                <div class="field">
+                    <label for="{{ form.transportista.id_for_label }}">Transportista</label>
+                    {{ form.transportista }}
+                    {% if form.transportista.errors %}
+                    <div class="field-error">{{ form.transportista.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label for="{{ form.vendedor.id_for_label }}">Vendedor / Asistente Comercial</label>
+                    {{ form.vendedor }}
+                    {% if form.vendedor.errors %}
+                    <div class="field-error">{{ form.vendedor.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                {% if admin_session %}
+                <div class="field">
+                    <label for="{{ form.vendedor_nombre.id_for_label }}">Nombre manual del vendedor</label>
+                    {{ form.vendedor_nombre }}
+                    <div class="field-hint">Solo si el vendedor no está en la lista.</div>
+                    {% if form.vendedor_nombre.errors %}
+                    <div class="field-error">{{ form.vendedor_nombre.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
 
-            <!-- Sección 2.1: Nota de Venta -->
-            <div class="form-group">
-                <label for="nv">Nota de Venta (NV)</label>
-                <input type="text" id="nv" name="nv" 
-                       placeholder="Ej: NV-2025-001"
-                       value="{{ form.nv.value|default:'' }}"
-                       class="form-input">
-                {% if form.nv.errors %}
-                <div class="error-message show">
-                    {{ form.nv.errors.0 }}
-                </div>
-                {% endif %}
-            </div>
+            <!-- Dirección de entrega -->
+            <div class="section">
+                <div class="section-title">Dirección de Entrega</div>
 
-            <div class="form-group">
-                <label for="nv_fecha_creacion">Fecha de creación NV (manual)</label>
-                {{ form.nv_fecha_creacion }}
-                {% if form.nv_fecha_creacion.errors %}
-                <div class="error-message show">
-                    {{ form.nv_fecha_creacion.errors.0 }}
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.fecha_despacho.id_for_label }}">Fecha de Despacho</label>
-                {{ form.fecha_despacho }}
-                {% if form.fecha_despacho.errors %}
-                <div class="error-message show">
-                    {{ form.fecha_despacho.errors.0 }}
-                </div>
-                {% endif %}
-            </div>
-            
-            <!-- Sección 3: Dirección de Entrega -->
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="usa_direccion_facturacion" name="usa_direccion_facturacion" 
-                           checked onchange="toggleDireccionAlternativa()">
-                    <label for="usa_direccion_facturacion" style="margin-bottom: 0;">
-                        Usar dirección de facturación
+                <div class="field">
+                    <label class="checkbox-row" for="usa_direccion_facturacion">
+                        <input type="checkbox" id="usa_direccion_facturacion"
+                               name="usa_direccion_facturacion"
+                               checked onchange="toggleDireccion()">
+                        <span>Usar la dirección de facturación del cliente</span>
                     </label>
                 </div>
-            </div>
-            
-            <!-- Dirección alternativa -->
-            <div class="form-group conditional-field" id="direccionAlternativaGroup">
-                <label for="direccion_entrega">Dirección de Entrega <span class="required">*</span></label>
-                <textarea id="direccion_entrega" name="direccion_entrega" 
-                          placeholder="Ingresa la dirección donde se entregará el paquete"
-                          rows="3"></textarea>
-            </div>
-            
-            <!-- Google Maps Link -->
-            <div class="form-group conditional-field" id="mapLinkGroup">
-                <label for="map_link">Link de Google Maps (opcional)</label>
-                <input type="url" id="map_link" name="map_link" 
-                       placeholder="https://maps.google.com/...">
-            </div>
-            
-            <!-- Sección 4: Transportista -->
-            <div class="form-group">
-                <label for="transportista">Transportista (opcional)</label>
-                {{ form.transportista }}
+
+                <div class="conditional-field" id="direccionAlternativaGroup">
+                    <div class="field">
+                        <label for="direccion_entrega">Dirección de Entrega <span class="required">*</span></label>
+                        <textarea id="direccion_entrega" name="direccion_entrega"
+                                  placeholder="Calle, número, comuna, ciudad"
+                                  rows="3"></textarea>
+                    </div>
+
+                    <div class="field">
+                        <label for="map_link">Enlace Google Maps <span style="color:#888; font-weight:400;">(opcional)</span></label>
+                        <input type="url" id="map_link" name="map_link"
+                               placeholder="https://maps.google.com/...">
+                    </div>
+                </div>
             </div>
 
-            <!-- Sección 5: Vendedor / Asistente Comercial -->
-            <div class="form-group">
-                <label for="{{ form.vendedor.id_for_label }}">Vendedor / Asistente Comercial</label>
-                {{ form.vendedor }}
-                {% if form.vendedor.errors %}
-                <div class="error-message show">
-                    {{ form.vendedor.errors.0 }}
+            <!-- Observaciones -->
+            <div class="section">
+                <div class="section-title">Observaciones</div>
+                <div class="field">
+                    <textarea id="notas" name="notas"
+                              placeholder="Instrucciones especiales, referencias de entrega, etc."
+                              rows="3">{{ form.notas.value|default:'' }}</textarea>
                 </div>
-                {% endif %}
             </div>
-            {% if admin_session %}
-            <div class="form-group">
-                <label for="{{ form.vendedor_nombre.id_for_label }}">Nombre manual del vendedor / asistente</label>
-                {{ form.vendedor_nombre }}
-                {% if form.vendedor_nombre.errors %}
-                <div class="error-message show">
-                    {{ form.vendedor_nombre.errors.0 }}
-                </div>
-                {% endif %}
+
+            <!-- Acciones -->
+            <div class="actions">
+                <a href="{% url 'hub' %}" class="btn-cancel">Cancelar</a>
+                <button type="submit" class="btn-submit">Crear Guía</button>
             </div>
-            {% endif %}
-            
-            <!-- Sección 6: Notas -->
-            <div class="form-group">
-                <label for="notas">Observaciones</label>
-                <textarea id="notas" name="notas" 
-                          placeholder="Notas adicionales sobre la guía"
-                          rows="3">{{ form.notas.value|default:'' }}</textarea>
-            </div>
-            
-            <!-- Botones de acción -->
-            <div class="button-group">
-                <button type="submit" class="btn-submit">✓ Crear Guía</button>
-                <a href="{% url 'guide_list' %}" class="btn-cancel">Cancelar</a>
-            </div>
+
         </form>
     </div>
-    
+
     <script>
-        const rutInput = document.getElementById('rut');
-        const btnSearch = document.getElementById('btnSearch');
-        const loading = document.getElementById('loading');
-        const clientInfo = document.getElementById('clientInfo');
-        const usaDireccionCheckbox = document.getElementById('usa_direccion_facturacion');
-        const direccionAlternativaGroup = document.getElementById('direccionAlternativaGroup');
-        const mapLinkGroup = document.getElementById('mapLinkGroup');
-        const numeroGuiaInput = document.getElementById('numero_guia');
-        
+        const rutInput       = document.getElementById('rut');
+        const btnSearch      = document.getElementById('btnSearch');
+        const loading        = document.getElementById('loading');
+        const clientInfo     = document.getElementById('clientInfo');
+        const clientNotFound = document.getElementById('clientNotFound');
+        const usaDirCheck    = document.getElementById('usa_direccion_facturacion');
+        const dirAltGroup    = document.getElementById('direccionAlternativaGroup');
+
         // Búsqueda de cliente por RUT
-        btnSearch.addEventListener('click', async function() {
+        btnSearch.addEventListener('click', async function () {
             const rut = rutInput.value.trim();
-            
-            if (!rut) {
-                alert('Ingresa un RUT');
-                return;
-            }
-            
+            if (!rut) { rutInput.focus(); return; }
+
             loading.classList.add('show');
             clientInfo.classList.remove('show');
-            
+            clientNotFound.classList.remove('show');
+
             try {
                 const formData = new FormData();
                 formData.append('rut', rut);
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                
-                const response = await fetch('{% url "search_client" %}', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
+
+                const res  = await fetch('{% url "search_client" %}', { method: 'POST', body: formData });
+                const data = await res.json();
+
                 if (data.success) {
-                    document.getElementById('clientNombre').textContent = data.nombre;
+                    document.getElementById('clientNombre').textContent   = data.nombre;
                     document.getElementById('clientDireccion').textContent = data.direccion_facturacion;
                     clientInfo.classList.add('show');
                 } else {
-                    alert(data.error || 'Cliente no encontrado');
+                    clientNotFound.classList.add('show');
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error al buscar cliente');
+            } catch (e) {
+                clientNotFound.classList.add('show');
             } finally {
                 loading.classList.remove('show');
             }
         });
-        
-        // Permitir búsqueda con Enter
-        rutInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                btnSearch.click();
-            }
+
+        // Buscar con Enter
+        rutInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); btnSearch.click(); }
         });
-        
-        // Mostrar/ocultar dirección alternativa
-        function toggleDireccionAlternativa() {
-            if (usaDireccionCheckbox.checked) {
-                direccionAlternativaGroup.classList.remove('show');
-                mapLinkGroup.classList.remove('show');
+
+        // Toggle dirección alternativa
+        function toggleDireccion() {
+            if (usaDirCheck.checked) {
+                dirAltGroup.classList.remove('show');
                 document.getElementById('direccion_entrega').removeAttribute('required');
             } else {
-                direccionAlternativaGroup.classList.add('show');
-                mapLinkGroup.classList.add('show');
+                dirAltGroup.classList.add('show');
                 document.getElementById('direccion_entrega').setAttribute('required', 'required');
             }
         }
-        
-        // Validación en cliente
-        document.getElementById('guideForm').addEventListener('submit', function(e) {
-            const rut = rutInput.value.trim();
-            const numeroGuia = numeroGuiaInput.value.trim();
-            
-            if (!rut) {
+
+        // Validación antes de enviar
+        document.getElementById('guideForm').addEventListener('submit', function (e) {
+            if (!rutInput.value.trim()) {
                 e.preventDefault();
-                alert('Debe buscar un cliente primero');
                 rutInput.focus();
+                rutInput.style.borderColor = '#c0392b';
                 return;
             }
-            
-            if (!numeroGuia) {
+            if (!document.getElementById('numero_guia').value.trim()) {
                 e.preventDefault();
-                alert('Ingresa un número de guía');
-                numeroGuiaInput.focus();
+                document.getElementById('numero_guia').focus();
                 return;
             }
-            
-            if (!usaDireccionCheckbox.checked) {
-                const direccion = document.getElementById('direccion_entrega').value.trim();
-                if (!direccion) {
-                    e.preventDefault();
-                    alert('Ingresa una dirección de entrega');
-                    document.getElementById('direccion_entrega').focus();
-                    return;
-                }
+            if (!usaDirCheck.checked && !document.getElementById('direccion_entrega').value.trim()) {
+                e.preventDefault();
+                document.getElementById('direccion_entrega').focus();
+                return;
             }
         });
-        
-        // Inicializar estado de dirección alternativa
-        toggleDireccionAlternativa();
+
+        toggleDireccion();
     </script>
 </body>
 </html>

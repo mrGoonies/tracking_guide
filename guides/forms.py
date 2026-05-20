@@ -2,15 +2,6 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Client, DispatchGuide, Seller
 
-class ImportClientCSVForm(forms.Form):
-    """Formulario para cargar archivo CSV de clientes."""
-    csv_file = forms.FileField(
-        label='Archivo CSV',
-        help_text='Formato esperado: Cuenta de cliente; Dirección; Nombre',
-        widget=forms.FileInput(attrs={'accept': '.csv'})
-    )
-
-
 class CreateDispatchGuideForm(forms.ModelForm):
     """Formulario para crear una nueva guía de despacho."""
     rut = forms.CharField(

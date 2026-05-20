@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio — Irritec</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f4f1;
+            min-height: 100vh;
+        }
+
+        /* Top bar */
+        .topbar {
+            background: #2d7a35;
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .topbar-brand-name {
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        .topbar-brand-sep {
+            color: rgba(255,255,255,0.4);
+            font-size: 16px;
+        }
+
+        .topbar-brand-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            font-weight: 500;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-user {
+            font-size: 13px;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .topbar-user strong {
+            color: #fff;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover { background: rgba(255,255,255,0.25); }
+
+        /* Main content */
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 36px 20px 48px;
+        }
+
+        /* Welcome */
+        .welcome {
+            margin-bottom: 32px;
+        }
+
+        .welcome-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .welcome-sub {
+            font-size: 14px;
+            color: #777;
+        }
+
+        /* Stats row */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 36px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 18px 16px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            border-top: 3px solid #e0e0e0;
+        }
+
+        .stat-card.green  { border-top-color: #2d7a35; }
+        .stat-card.blue   { border-top-color: #1a56db; }
+        .stat-card.yellow { border-top-color: #f0a500; }
+        .stat-card.teal   { border-top-color: #17a2b8; }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        /* Section title */
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 14px;
+        }
+
+        /* Nav grid */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-bottom: 36px;
+        }
+
+        .nav-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px 22px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            border: 1.5px solid transparent;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+        }
+
+        .nav-card:hover {
+            border-color: #2d7a35;
+            box-shadow: 0 4px 16px rgba(45,122,53,0.12);
+            transform: translateY(-2px);
+        }
+
+        .nav-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .icon-green  { background: #e8f5e9; }
+        .icon-blue   { background: #e3f0ff; }
+        .icon-purple { background: #f3e8ff; }
+        .icon-orange { background: #fff4e5; }
+
+        .nav-text-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 3px;
+        }
+
+        .nav-text-desc {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        /* Messages */
+        .messages { margin-bottom: 24px; }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .alert-success { background: #d1e7dd; color: #0f5132; }
+        .alert-error   { background: #f8d7da; color: #721c24; }
+        .alert-info    { background: #cfe2ff; color: #084298; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .nav-grid { grid-template-columns: 1fr; }
+            .topbar-brand-sub { display: none; }
+            .topbar-brand-sep { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <a href="{% url 'hub' %}" class="topbar-brand">
+            <span class="topbar-brand-name">irritec</span>
+            <span class="topbar-brand-sep">|</span>
+            <span class="topbar-brand-sub">Guías de Despacho</span>
+        </a>
+        <div class="topbar-right">
+            <span class="topbar-user">
+                <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                {% if request.user.is_staff %}
+                    &nbsp;· Admin
+                {% else %}
+                    &nbsp;· Coordinador
+                {% endif %}
+            </span>
+            <a href="{% url 'logout' %}" class="btn-logout">Cerrar sesión</a>
+        </div>
+    </div>
+
+    <div class="main">
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="welcome">
+            <div class="welcome-title">Buen día, {{ request.user.get_full_name|default:request.user.username }}</div>
+            <div class="welcome-sub">{% now "l j \d\e F \d\e Y" %}</div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card green">
+                <div class="stat-value">{{ resumen.total_guias }}</div>
+                <div class="stat-label">Total guías</div>
+            </div>
+            <div class="stat-card teal">
+                <div class="stat-value">{{ resumen.en_ruta }}</div>
+                <div class="stat-label">En ruta</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-value">{{ resumen.pendientes }}</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-value">{{ resumen.entregadas_hoy }}</div>
+                <div class="stat-label">Entregadas hoy</div>
+            </div>
+        </div>
+
+        <div class="section-title">Acciones rápidas</div>
+
+        <div class="nav-grid">
+            <a href="{% url 'create_guide' %}" class="nav-card">
+                <div class="nav-icon icon-green">📦</div>
+                <div>
+                    <div class="nav-text-title">Nueva Guía</div>
+                    <div class="nav-text-desc">Registrar una nueva guía de despacho</div>
+                </div>
+            </a>
+            <a href="{% url 'guide_list' %}" class="nav-card">
+                <div class="nav-icon icon-blue">📋</div>
+                <div>
+                    <div class="nav-text-title">Ver Guías</div>
+                    <div class="nav-text-desc">Listar, filtrar y gestionar guías existentes</div>
+                </div>
+            </a>
+            <a href="{% url 'dashboard' %}" class="nav-card">
+                <div class="nav-icon icon-purple">📊</div>
+                <div>
+                    <div class="nav-text-title">Dashboard</div>
+                    <div class="nav-text-desc">Métricas y resumen del estado general</div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>

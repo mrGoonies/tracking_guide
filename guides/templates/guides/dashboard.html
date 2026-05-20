@@ -3,251 +3,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Tracking Guide</title>
+    <title>Dashboard — Irritec</title>
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f4f7fb;
-            margin: 0;
-            padding: 20px;
-            color: #1f2937;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f4f1;
+            min-height: 100vh;
+            color: #1a1a1a;
         }
-        .container {
+
+        /* Topbar */
+        .topbar {
+            background: #2d7a35;
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-left { display: flex; align-items: center; gap: 14px; }
+
+        .topbar-back {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.12);
+            transition: background 0.2s;
+        }
+        .topbar-back:hover { background: rgba(255,255,255,0.22); }
+
+        .topbar-title { font-size: 16px; font-weight: 700; color: #fff; }
+        .topbar-brand { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+
+        /* Main */
+        .main {
             max-width: 1100px;
             margin: 0 auto;
+            padding: 28px 20px 48px;
         }
-        .header {
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-title { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+        .page-sub { font-size: 13px; color: #888; }
+
+        /* Stat cards row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            border-top: 3px solid #e0e0e0;
+        }
+
+        .stat-card.green  { border-top-color: #2d7a35; }
+        .stat-card.teal   { border-top-color: #17a2b8; }
+        .stat-card.yellow { border-top-color: #f0a500; }
+        .stat-card.gray   { border-top-color: #6c757d; }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-label { font-size: 12px; color: #888; font-weight: 600; }
+
+        /* Two-col layout */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        /* Section card */
+        .section {
+            background: #fff;
+            border-radius: 14px;
+            padding: 22px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: #2d7a35;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e8f5e9;
+        }
+
+        /* Status breakdown */
+        .status-row {
             display: flex;
-            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 5px;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
+
+        .status-name { font-size: 13px; font-weight: 600; color: #333; }
+        .status-count { font-size: 13px; font-weight: 800; color: #1a1a1a; }
+        .status-pct { font-size: 11px; color: #aaa; min-width: 36px; text-align: right; }
+
+        .status-bar {
+            height: 7px;
+            background: #f0f0f0;
+            border-radius: 99px;
+            overflow: hidden;
+            margin-bottom: 14px;
         }
-        .header p {
-            margin: 0;
-            color: #4b5563;
+
+        .status-fill { height: 100%; border-radius: 99px; }
+        .fill-emitida   { background: #9e9e9e; }
+        .fill-asignada  { background: #f0a500; }
+        .fill-en_ruta   { background: #1a56db; }
+        .fill-entregada { background: #2d7a35; }
+        .fill-rechazada { background: #dc3545; }
+        .fill-cerrada   { background: #555; }
+
+        /* Activity stats */
+        .activity-list { display: flex; flex-direction: column; gap: 16px; }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 16px;
+            background: #f8fdf8;
+            border-radius: 10px;
+            border: 1px solid #e8f5e9;
         }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 20px;
-            margin-bottom: 24px;
+
+        .activity-icon {
+            font-size: 22px;
+            flex-shrink: 0;
         }
-        .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-            padding: 22px;
-            min-height: 130px;
+
+        .activity-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1;
         }
-        .card h2 {
-            margin: 0 0 10px;
-            font-size: 16px;
-            color: #374151;
-        }
-        .card strong {
-            display: block;
-            font-size: 34px;
-            margin-top: 8px;
-            color: #111827;
-        }
-        .section {
-            margin-bottom: 24px;
-        }
-        .section h3 {
-            margin-bottom: 16px;
-            font-size: 20px;
-            color: #111827;
-        }
-        .table {
+
+        .activity-label { font-size: 12px; color: #888; margin-top: 3px; }
+
+        /* Tables */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            font-size: 13px;
         }
-        .table th,
-        .table td {
-            padding: 16px 18px;
+
+        .data-table th {
             text-align: left;
-        }
-        .table th {
-            background: #f8fafc;
-            color: #334155;
+            padding: 9px 12px;
+            font-size: 11px;
             font-weight: 700;
-            border-bottom: 1px solid #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #aaa;
+            border-bottom: 1px solid #f0f0f0;
         }
-        .table tr + tr td {
-            border-top: 1px solid #e2e8f0;
+
+        .data-table td {
+            padding: 11px 12px;
+            border-bottom: 1px solid #f7f7f7;
+            color: #333;
+            vertical-align: middle;
         }
+
+        .data-table tr:last-child td { border-bottom: none; }
+
+        .data-table tr:hover td { background: #f8fdf8; }
+
+        .rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #e8f5e9;
+            color: #2d7a35;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        /* Status badge */
         .badge {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 12px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
             font-weight: 700;
-            color: white;
         }
-        .badge.emitida { background: #2563eb; }
-        .badge.asignada { background: #f59e0b; }
-        .badge.en_ruta { background: #0ea5e9; }
-        .badge.entregada { background: #16a34a; }
-        .badge.rechazada { background: #dc2626; }
-        .badge.cerrada { background: #0f172a; }
-        .status-bar {
-            height: 10px;
-            border-radius: 999px;
-            background: #e2e8f0;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        .status-fill {
-            height: 100%;
-            border-radius: 999px;
-        }
-        .status-fill.emitida { background: #60a5fa; }
-        .status-fill.asignada { background: #fbbf24; }
-        .status-fill.en_ruta { background: #38bdf8; }
-        .status-fill.entregada { background: #34d399; }
-        .status-fill.rechazada { background: #f87171; }
-        .status-fill.cerrada { background: #0f172a; }
-        .overview-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 20px;
-        }
-        .link-back {
-            display: inline-block;
-            margin-top: 16px;
-            color: #2563eb;
+
+        .badge-emitida   { background: #f5f5f5;  color: #666; }
+        .badge-asignada  { background: #fff3cd;  color: #856404; }
+        .badge-en_ruta   { background: #cfe2ff;  color: #084298; }
+        .badge-entregada { background: #d1e7dd;  color: #0f5132; }
+        .badge-rechazada { background: #f8d7da;  color: #721c24; }
+        .badge-cerrada   { background: #e2e3e5;  color: #41464b; }
+
+        .guide-link {
+            color: #2d7a35;
             text-decoration: none;
-            font-weight: 700;
+            font-weight: 600;
         }
-        @media (max-width: 960px) {
-            .grid,
-            .overview-grid {
-                grid-template-columns: 1fr;
-            }
+
+        .guide-link:hover { text-decoration: underline; }
+
+        .empty-row td {
+            text-align: center;
+            color: #aaa;
+            font-style: italic;
+            padding: 24px;
+        }
+
+        /* Full-width section */
+        .section-full { margin-bottom: 14px; }
+
+        /* Responsive */
+        @media (max-width: 860px) {
+            .two-col { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .section { padding: 16px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>📊 Dashboard Gerencial</h1>
-                <p>Visibilidad de clientes, guías, estados y actividad reciente.</p>
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="{% url 'hub' %}" class="topbar-back">← Inicio</a>
+            <span class="topbar-title">Dashboard</span>
+        </div>
+        <span class="topbar-brand">irritec</span>
+    </div>
+
+    <div class="main">
+
+        <div class="page-header">
+            <div class="page-title">Dashboard Gerencial</div>
+            <div class="page-sub">Visibilidad general del estado de guías, transportistas y clientes</div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="stats-row">
+            <div class="stat-card green">
+                <div class="stat-value">{{ total_guides }}</div>
+                <div class="stat-label">Total de guías</div>
             </div>
-            <div>
-                <a href="{% url 'home' %}" class="link-back">← Volver al inicio</a>
+            <div class="stat-card teal">
+                <div class="stat-value">{{ open_guides }}</div>
+                <div class="stat-label">Guías abiertas</div>
+            </div>
+            <div class="stat-card gray">
+                <div class="stat-value">{{ closed_guides }}</div>
+                <div class="stat-label">Guías cerradas</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-value">{{ total_clients }}</div>
+                <div class="stat-label">Clientes registrados</div>
             </div>
         </div>
 
-        <div class="grid">
-            <div class="card">
-                <h2>Total de clientes</h2>
-                <strong>{{ total_clients }}</strong>
-            </div>
-            <div class="card">
-                <h2>Total de guías</h2>
-                <strong>{{ total_guides }}</strong>
-            </div>
-            <div class="card">
-                <h2>Guías abiertas</h2>
-                <strong>{{ open_guides }}</strong>
-            </div>
-            <div class="card">
-                <h2>Guías cerradas</h2>
-                <strong>{{ closed_guides }}</strong>
-            </div>
-        </div>
-
-        <div class="overview-grid">
+        <!-- Estado + Actividad -->
+        <div class="two-col">
             <div class="section">
-                <h3>Resumen por estado</h3>
-                <div class="card">
-                    {% for item in status_breakdown %}
-                        <div style="margin-bottom: 18px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                                <span>{{ item.label }}</span>
-                                <strong>{{ item.count }}</strong>
-                            </div>
-                            <div class="status-bar">
-                                <div class="status-fill {{ item.estado }}" style="width: {{ item.percent }}%;"></div>
-                            </div>
-                            <div style="font-size: 13px; color: #64748b; margin-top: 6px;">{{ item.percent }}% del total</div>
+                <div class="section-title">Distribución por estado</div>
+                {% for item in status_breakdown %}
+                <div class="status-row">
+                    <span class="status-name">{{ item.label }}</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span class="status-count">{{ item.count }}</span>
+                        <span class="status-pct">{{ item.percent }}%</span>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <div class="status-fill fill-{{ item.estado }}"
+                         style="width: {{ item.percent }}%;"></div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="section">
+                <div class="section-title">Actividad reciente</div>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <span class="activity-icon">📦</span>
+                        <div>
+                            <div class="activity-value">{{ guides_last_7_days }}</div>
+                            <div class="activity-label">Guías creadas en los últimos 7 días</div>
                         </div>
-                    {% endfor %}
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">📷</span>
+                        <div>
+                            <div class="activity-value">{{ stage_photo_count }}</div>
+                            <div class="activity-label">Etapas con evidencia fotográfica</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">🔄</span>
+                        <div>
+                            <div class="activity-value">{{ total_stages }}</div>
+                            <div class="activity-label">Total de movimientos registrados</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Top clientes + Top transportistas -->
+        <div class="two-col">
+            <div class="section">
+                <div class="section-title">Top clientes por guías</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Cliente</th>
+                            <th>RUT</th>
+                            <th>Guías</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in top_clients %}
+                        <tr>
+                            <td><span class="rank">{{ forloop.counter }}</span></td>
+                            <td>{{ client.nombre }}</td>
+                            <td style="color:#888;">{{ client.rut }}</td>
+                            <td><strong>{{ client.guides_count }}</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr class="empty-row"><td colspan="4">Sin datos disponibles</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
 
             <div class="section">
-                <h3>Actividad reciente</h3>
-                <div class="card">
-                    <p><strong>{{ guides_last_7_days }}</strong> guías creadas en los últimos 7 días</p>
-                    <p><strong>{{ stage_photo_count }}</strong> etapas con evidencia fotográfica</p>
-                    <p><strong>{{ total_stages }}</strong> movimientos registrados</p>
-                </div>
+                <div class="section-title">Top transportistas</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Transportista</th>
+                            <th>Guías</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for carrier in top_carriers %}
+                        <tr>
+                            <td><span class="rank">{{ forloop.counter }}</span></td>
+                            <td>{{ carrier.get_full_name|default:carrier.username }}</td>
+                            <td><strong>{{ carrier.guides_count }}</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr class="empty-row"><td colspan="3">Sin transportistas asignados</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="section">
-            <h3>Top 5 clientes por guías</h3>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>RUT</th>
-                        <th>Guías</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for client in top_clients %}
-                    <tr>
-                        <td>{{ client.nombre }}</td>
-                        <td>{{ client.rut }}</td>
-                        <td>{{ client.guides_count }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="3">No hay datos disponibles</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <h3>Top transportistas asignados</h3>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Transportista</th>
-                        <th>Usuario</th>
-                        <th>Guías asignadas</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for carrier in top_carriers %}
-                    <tr>
-                        <td>{{ carrier.get_full_name|default:carrier.username }}</td>
-                        <td>{{ carrier.username }}</td>
-                        <td>{{ carrier.guides_count }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="3">No hay transportistas con guías asignadas</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <h3>Últimos movimientos</h3>
-            <table class="table">
+        <!-- Últimos movimientos -->
+        <div class="section section-full">
+            <div class="section-title">Últimos movimientos</div>
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Guía</th>
@@ -259,17 +412,27 @@
                 <tbody>
                     {% for stage in latest_stages %}
                     <tr>
-                        <td>{{ stage.guia.numero_guia }}</td>
-                        <td><span class="badge {{ stage.estado }}">{{ stage.get_estado_display }}</span></td>
-                        <td>{{ stage.timestamp|date:'d/m/Y H:i' }}</td>
-                        <td>{{ stage.observaciones|default:'—' }}</td>
+                        <td>
+                            <a href="{% url 'guide_detail' stage.guia.id %}" class="guide-link">
+                                #{{ stage.guia.numero_guia }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ stage.estado }}">
+                                {{ stage.get_estado_display }}
+                            </span>
+                        </td>
+                        <td style="color:#888;">{{ stage.timestamp|date:"d/m/Y H:i" }}</td>
+                        <td style="color:#555;">{{ stage.observaciones|default:"—" }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4">No hay movimientos recientes</td></tr>
+                    <tr class="empty-row"><td colspan="4">No hay movimientos registrados</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
     </div>
+
 </body>
 </html>

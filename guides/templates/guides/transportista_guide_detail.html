@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Guía #{{ guide.numero_guia }} — Irritec</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --green: #2d7a35;
+            --green-dark: #1e5c28;
+            --green-light: #e8f5e9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4f1;
+            min-height: 100vh;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* Header */
+        .header {
+            background: var(--green);
+            padding: 14px 20px 14px;
+            padding-top: calc(14px + env(safe-area-inset-top, 0px));
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 9px;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .header-guide {
+            text-align: center;
+        }
+
+        .header-guide-num {
+            font-size: 16px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .header-guide-status {
+            font-size: 11px;
+            color: rgba(255,255,255,0.75);
+            margin-top: 2px;
+        }
+
+        .brand { font-size: 15px; font-weight: 800; color: rgba(255,255,255,0.85); }
+
+        /* Messages */
+        .messages { padding: 12px 14px 0; }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .alert-success { background: #d1e7dd; color: #0f5132; }
+        .alert-error   { background: #f8d7da; color: #721c24; }
+
+        /* Content */
+        .content { padding: 14px; }
+
+        /* Cards */
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+        }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--green);
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--green-light);
+        }
+
+        /* Info rows */
+        .info-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .info-row { display: flex; gap: 12px; align-items: flex-start; }
+
+        .info-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            width: 28px;
+            text-align: center;
+            margin-top: 1px;
+        }
+
+        .info-content {}
+
+        .info-label {
+            font-size: 11px;
+            color: #aaa;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 2px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            color: #1a1a1a;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .info-value a {
+            color: var(--green);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .badge-emitida   { background: #f0f0f0; color: #666; }
+        .badge-asignada  { background: #fff3cd; color: #856404; }
+        .badge-en_ruta   { background: #dbeafe; color: #1d4ed8; }
+        .badge-entregada { background: var(--green-light); color: #1b5e20; }
+        .badge-rechazada { background: #fee2e2; color: #991b1b; }
+        .badge-cerrada   { background: #e5e7eb; color: #374151; }
+
+        /* Quick action buttons */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .quick-actions.single { grid-template-columns: 1fr; }
+
+        .btn-quick {
+            padding: 16px 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: opacity 0.15s, transform 0.1s;
+            line-height: 1.2;
+        }
+
+        .btn-quick:active { opacity: 0.8; transform: scale(0.97); }
+
+        .btn-quick-en_ruta   { background: #dbeafe; color: #1d4ed8; }
+        .btn-quick-asignada  { background: #fff3cd; color: #856404; }
+        .btn-quick-entregada { background: var(--green-light); color: #1b5e20; }
+        .btn-quick-rechazada { background: #fee2e2; color: #991b1b; }
+        .btn-quick-cerrada   { background: #e5e7eb; color: #374151; }
+
+        /* Form fields */
+        .field { margin-bottom: 16px; }
+        .field:last-child { margin-bottom: 0; }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #444;
+            margin-bottom: 8px;
+        }
+
+        .field select,
+        .field textarea {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            color: #1a1a1a;
+            background: #fafafa;
+            outline: none;
+            -webkit-appearance: none;
+            transition: border-color 0.2s;
+        }
+
+        .field select:focus,
+        .field textarea:focus {
+            border-color: var(--green);
+            background: #fff;
+        }
+
+        .field textarea { resize: none; min-height: 90px; }
+
+        /* Photo upload */
+        .photo-upload {
+            position: relative;
+        }
+
+        .photo-input {
+            display: none;
+        }
+
+        .photo-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 28px 16px;
+            border: 2.5px dashed #a5d6a7;
+            border-radius: 14px;
+            background: #f8fdf8;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            text-align: center;
+        }
+
+        .photo-label:active { background: var(--green-light); }
+
+        .photo-label.has-file {
+            border-color: var(--green);
+            background: var(--green-light);
+        }
+
+        .photo-icon { font-size: 36px; }
+
+        .photo-label-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--green);
+        }
+
+        .photo-label-hint {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .photo-filename {
+            font-size: 13px;
+            color: var(--green);
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        /* Submit */
+        .btn-submit {
+            width: 100%;
+            padding: 17px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-submit:active { background: var(--green-dark); transform: scale(0.98); }
+
+        /* Final state */
+        .final-state {
+            text-align: center;
+            padding: 28px 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            color: #666;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .final-state-icon { font-size: 36px; margin-bottom: 10px; }
+
+        /* Timeline */
+        .timeline { position: relative; padding-left: 22px; }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e0e0e0;
+        }
+
+        .tl-item { position: relative; margin-bottom: 20px; }
+        .tl-item:last-child { margin-bottom: 0; }
+
+        .tl-dot {
+            position: absolute;
+            left: -19px;
+            top: 5px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+
+        .dot-emitida   { background: #9e9e9e; box-shadow: 0 0 0 2px #9e9e9e; }
+        .dot-asignada  { background: #f0a500; box-shadow: 0 0 0 2px #f0a500; }
+        .dot-en_ruta   { background: #1a56db; box-shadow: 0 0 0 2px #1a56db; }
+        .dot-entregada { background: var(--green); box-shadow: 0 0 0 2px var(--green); }
+        .dot-rechazada { background: #dc3545; box-shadow: 0 0 0 2px #dc3545; }
+        .dot-cerrada   { background: #555; box-shadow: 0 0 0 2px #555; }
+
+        .tl-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tl-time { font-size: 12px; color: #aaa; }
+
+        .tl-obs {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .tl-photo img {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-row">
+            <a href="{% url 'transportista_guides' %}" class="btn-back">← Volver</a>
+            <div class="header-guide">
+                <div class="header-guide-num">Guía #{{ guide.numero_guia }}</div>
+                <div class="header-guide-status">{{ guide.get_estado_display }}</div>
+            </div>
+            <span class="brand">irritec</span>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="content">
+
+        <!-- Info de la guía -->
+        <div class="card">
+            <div class="card-title">Información de entrega</div>
+            <div class="info-list">
+                <div class="info-row">
+                    <span class="info-icon">🏢</span>
+                    <div class="info-content">
+                        <div class="info-label">Cliente</div>
+                        <div class="info-value">{{ guide.cliente.nombre }}</div>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <span class="info-icon">📍</span>
+                    <div class="info-content">
+                        <div class="info-label">Dirección</div>
+                        <div class="info-value">{{ guide.direccion_entrega }}</div>
+                    </div>
+                </div>
+                {% if guide.map_link %}
+                <div class="info-row">
+                    <span class="info-icon">🗺️</span>
+                    <div class="info-content">
+                        <div class="info-label">Mapa</div>
+                        <div class="info-value">
+                            <a href="{{ guide.map_link }}" target="_blank">Abrir en Google Maps →</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if guide.fecha_despacho %}
+                <div class="info-row">
+                    <span class="info-icon">📅</span>
+                    <div class="info-content">
+                        <div class="info-label">Fecha de despacho</div>
+                        <div class="info-value">{{ guide.fecha_despacho|date:"d/m/Y" }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <span class="info-icon">📋</span>
+                    <div class="info-content">
+                        <div class="info-label">Estado actual</div>
+                        <div class="info-value">
+                            <span class="status-badge badge-{{ guide.estado }}">
+                                {{ guide.get_estado_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% if guide.notas %}
+                <div class="info-row">
+                    <span class="info-icon">💬</span>
+                    <div class="info-content">
+                        <div class="info-label">Instrucciones</div>
+                        <div class="info-value">{{ guide.notas }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actualizar estado -->
+        {% if next_states %}
+        <div class="card">
+            <div class="card-title">Registrar cambio de estado</div>
+
+            <div class="quick-actions {% if next_states|length == 1 %}single{% endif %}">
+                {% for estado_valor, estado_label in next_states %}
+                <button type="button"
+                        class="btn-quick btn-quick-{{ estado_valor }}"
+                        onclick="setEstado('{{ estado_valor }}')">
+                    {{ estado_label }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="updateForm">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label>Estado seleccionado</label>
+                    {{ form.nuevo_estado }}
+                </div>
+
+                <div class="field">
+                    <label>Foto de evidencia <span style="color:#dc3545;">*</span></label>
+                    <div class="photo-upload">
+                        <input type="file" id="photoInput" name="evidencia_foto"
+                               class="photo-input" accept="image/*" capture="environment"
+                               onchange="onPhoto(this)">
+                        <label for="photoInput" class="photo-label" id="photoLabel">
+                            <span class="photo-icon">📷</span>
+                            <span class="photo-label-title">Tomar foto</span>
+                            <span class="photo-label-hint">o seleccionar desde la galería</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Observaciones <span style="color:#888; font-weight:400;">(opcional)</span></label>
+                    {{ form.notas }}
+                </div>
+
+                <button type="submit" class="btn-submit">Confirmar cambio</button>
+            </form>
+        </div>
+
+        {% else %}
+        <div class="card">
+            <div class="final-state">
+                <div class="final-state-icon">
+                    {% if guide.estado == 'entregada' or guide.estado == 'cerrada' %}✅{% else %}🔒{% endif %}
+                </div>
+                Guía en estado final. No requiere más acciones.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Historial -->
+        <div class="card">
+            <div class="card-title">Historial</div>
+            <div class="timeline">
+                {% for stage in stages %}
+                <div class="tl-item">
+                    <div class="tl-dot dot-{{ stage.estado }}"></div>
+                    <div class="tl-header">
+                        <span class="status-badge badge-{{ stage.estado }}">
+                            {{ stage.get_estado_display }}
+                        </span>
+                        <span class="tl-time">{{ stage.timestamp|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    {% if stage.observaciones %}
+                    <div class="tl-obs">{{ stage.observaciones }}</div>
+                    {% endif %}
+                    {% if stage.foto %}
+                    <div class="tl-photo">
+                        <img src="{{ stage.foto.url }}" alt="Evidencia">
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function setEstado(value) {
+            const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
+            if (sel) {
+                sel.value = value;
+                document.getElementById('updateForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function onPhoto(input) {
+            const label = document.getElementById('photoLabel');
+            if (input.files && input.files[0]) {
+                label.classList.add('has-file');
+                label.innerHTML = `
+                    <span class="photo-icon">✅</span>
+                    <span class="photo-label-title">Foto lista</span>
+                    <span class="photo-filename">${input.files[0].name}</span>`;
+            }
+        }
+    </script>
+
+</body>
+</html>
