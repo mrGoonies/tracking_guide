@@ -16,3 +16,6 @@ wheels/
 
 # Django media files
 media/
+
+.DS_Store
+Thumbs.db

@@ -332,7 +332,7 @@ def guide_detail(request, guide_id):
             GuideStage.objects.create(
                 guia=guide,
                 estado=nuevo_estado,
-                evidencia_foto=evidencia_foto,
+                foto=evidencia_foto,
                 observaciones=notas
             )
             
