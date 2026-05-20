@@ -13,8 +13,9 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from openpyxl import Workbook
+from .decorators import admin_or_coordinador_required
 from .forms import ImportClientCSVForm, CreateDispatchGuideForm, UpdateGuideStateForm
-from .utils import import_clients_from_csv
+from .utils import import_clients_from_csv, get_home_url_for_user
 from .models import Client, DispatchGuide, GuideStage
 
 def home(request):
@@ -28,8 +29,9 @@ def user_login(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            login(request, form.get_user())
-            return redirect(request.GET.get('next') or 'guide_list')
+            user = form.get_user()
+            login(request, user)
+            return redirect(request.GET.get('next') or get_home_url_for_user(user))
     else:
         form = AuthenticationForm()
 
@@ -43,7 +45,7 @@ def user_logout(request):
     return redirect('home')
 
 
-@login_required
+@admin_or_coordinador_required
 def import_clients(request):
     """Vista para importar clientes desde CSV."""
     if request.method == 'POST':
@@ -80,7 +82,7 @@ def import_clients(request):
     }
     return render(request, 'guides/import_clients.html', context)
 
-@login_required
+@admin_or_coordinador_required
 def guide_list(request):
     estado_filtro = request.GET.get('estado', '').strip()
     guides = DispatchGuide.objects.select_related('cliente', 'transportista', 'vendedor').order_by('-fecha_creacion')
@@ -96,7 +98,7 @@ def guide_list(request):
     return render(request, 'guides/guide_list.html', context)
 
 
-@login_required
+@admin_or_coordinador_required
 def export_route_planning(request):
     """Exporta un archivo Excel con la planificación de rutas."""
     guides = DispatchGuide.objects.select_related('cliente', 'transportista', 'vendedor').order_by('fecha_creacion')
@@ -168,7 +170,7 @@ def export_route_planning(request):
     return response
 
 
-@login_required
+@admin_or_coordinador_required
 def dashboard(request):
     total_clients = Client.objects.count()
     total_guides = DispatchGuide.objects.count()
@@ -215,6 +217,7 @@ def dashboard(request):
     return render(request, 'guides/dashboard.html', context)
 
 
+@login_required
 @require_POST
 def search_client_by_rut(request):
     """API endpoint para buscar cliente por RUT (AJAX)."""
@@ -239,7 +242,7 @@ def search_client_by_rut(request):
         }, status=404)
 
 
-@login_required
+@admin_or_coordinador_required
 def create_guide(request):
     """Vista para crear una nueva guía de despacho (mobile-first)."""
     admin_session = request.user.is_staff
@@ -308,7 +311,13 @@ def guide_detail(request, guide_id):
         guide = DispatchGuide.objects.get(id=guide_id)
     except DispatchGuide.DoesNotExist:
         messages.error(request, 'Guía no encontrada')
-        return redirect('guide_list')
+        return redirect(get_home_url_for_user(request.user))
+
+    # Transportista solo puede acceder a sus propias guías
+    from .utils import is_transportista
+    if is_transportista(request.user) and guide.transportista != request.user:
+        messages.error(request, 'No tienes acceso a esta guía.')
+        return redirect('transportista_guides')
     
     stages = guide.etapas.order_by('-timestamp')
     
