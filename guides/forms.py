@@ -36,6 +36,12 @@ class CreateDispatchGuideForm(forms.ModelForm):
         })
     )
     
+    foto_emision = forms.ImageField(
+        label='Foto de la guía (emisión)',
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*', 'capture': 'environment', 'class': 'form-input'})
+    )
+
     class Meta:
         model = DispatchGuide
         fields = ['numero_guia', 'nv', 'nv_fecha_creacion', 'fecha_despacho', 'transportista', 'vendedor', 'vendedor_nombre', 'notas']
@@ -86,13 +92,13 @@ class UpdateGuideStateForm(forms.Form):
         choices=DispatchGuide.STATUS_CHOICES,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    
+
     evidencia_foto = forms.ImageField(
         label='Evidencia Fotográfica',
-        required=True,
+        required=False,
         widget=forms.FileInput(attrs={'accept': 'image/*', 'capture': 'environment', 'class': 'form-input'})
     )
-    
+
     notas = forms.CharField(
         label='Notas del Cambio',
         required=False,

@@ -359,7 +359,7 @@
         </div>
         {% endif %}
 
-        <form method="post" id="guideForm">
+        <form method="post" enctype="multipart/form-data" id="guideForm">
             {% csrf_token %}
 
             <!-- Cliente -->
@@ -508,6 +508,24 @@
                 </div>
             </div>
 
+            <!-- Foto de emisión -->
+            <div class="section">
+                <div class="section-title">Foto de la Guía <span style="font-weight:400; font-size:13px; color:#888;">(opcional)</span></div>
+                <div class="field">
+                    <label class="file-label" for="id_foto_emision">
+                        <input type="file" id="id_foto_emision" name="foto_emision"
+                               accept="image/*" capture="environment"
+                               onchange="onFotoEmision(this)">
+                        <span class="photo-icon">📷</span>
+                        <span class="photo-label-title">Tomar foto o seleccionar imagen</span>
+                        <span id="fotoEmisionName" style="font-size:12px; color:#2d7a35; margin-top:4px;"></span>
+                    </label>
+                    {% if form.foto_emision.errors %}
+                    <div class="field-error">{{ form.foto_emision.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Acciones -->
             <div class="actions">
                 <a href="{% url 'hub' %}" class="btn-cancel">Cancelar</a>
@@ -518,6 +536,11 @@
     </div>
 
     <script>
+        function onFotoEmision(input) {
+            const label = document.getElementById('fotoEmisionName');
+            label.textContent = input.files.length ? input.files[0].name : '';
+        }
+
         const rutInput       = document.getElementById('rut');
         const btnSearch      = document.getElementById('btnSearch');
         const loading        = document.getElementById('loading');

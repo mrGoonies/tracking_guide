@@ -228,8 +228,8 @@ def create_guide(request):
     admin_session = request.user.is_staff or is_coordinador(request.user)
 
     if request.method == 'POST':
-        form = CreateDispatchGuideForm(request.POST, admin_session=admin_session)
-        
+        form = CreateDispatchGuideForm(request.POST, request.FILES, admin_session=admin_session)
+
         rut = request.POST.get('rut', '').strip()
         direccion_entrega = request.POST.get('direccion_entrega', '').strip()
         usa_direccion_facturacion = request.POST.get('usa_direccion_facturacion') == 'on'
@@ -269,6 +269,7 @@ def create_guide(request):
             GuideStage.objects.create(
                 guia=guide,
                 estado='emitida',
+                foto=form.cleaned_data.get('foto_emision'),
                 observaciones='Guía emitida en el sistema'
             )
             
@@ -337,23 +338,26 @@ def guide_detail(request, guide_id):
         form = UpdateGuideStateForm(request.POST, request.FILES)
         if form.is_valid():
             nuevo_estado = form.cleaned_data['nuevo_estado']
-            evidencia_foto = form.cleaned_data['evidencia_foto']
+            evidencia_foto = form.cleaned_data.get('evidencia_foto')
             notas = form.cleaned_data.get('notas', '')
-            
-            GuideStage.objects.create(
-                guia=guide,
-                estado=nuevo_estado,
-                foto=evidencia_foto,
-                observaciones=notas
-            )
-            
-            guide.estado = nuevo_estado
-            if nuevo_estado in ['entregada', 'rechazada'] and not guide.fecha_envio:
-                guide.fecha_envio = timezone.localdate()
-            guide.save()
-            
-            messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
-            return redirect('guide_detail', guide_id=guide.id)
+
+            if nuevo_estado in ('entregada', 'rechazada') and not evidencia_foto:
+                form.add_error('evidencia_foto', 'La foto es obligatoria al marcar como entregada o rechazada.')
+            else:
+                GuideStage.objects.create(
+                    guia=guide,
+                    estado=nuevo_estado,
+                    foto=evidencia_foto,
+                    observaciones=notas
+                )
+
+                guide.estado = nuevo_estado
+                if nuevo_estado in ['entregada', 'rechazada'] and not guide.fecha_envio:
+                    guide.fecha_envio = timezone.localdate()
+                guide.save()
+
+                messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
+                return redirect('guide_detail', guide_id=guide.id)
     else:
         form = UpdateGuideStateForm()
     

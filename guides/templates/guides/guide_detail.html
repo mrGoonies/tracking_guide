@@ -462,7 +462,7 @@
                     {% endif %}
                 </div>
 
-                <div class="field">
+                <div class="field" id="photoWrapper" style="display:none;">
                     <label>Evidencia Fotográfica <span style="color:#c0392b;">*</span></label>
                     <label class="file-label" for="id_evidencia_foto">
                         <input type="file" id="id_evidencia_foto" name="evidencia_foto"
@@ -470,7 +470,7 @@
                                onchange="onFileChange(this)">
                         <span class="file-label-icon">📷</span>
                         <span class="file-label-text">Tomar foto o seleccionar imagen</span>
-                        <span class="file-label-hint">JPG, PNG — requerida para registrar el cambio</span>
+                        <span class="file-label-hint">JPG, PNG — requerida al entregar o rechazar</span>
                         <span class="file-name" id="fileName"></span>
                     </label>
                     {% if form.evidencia_foto.errors %}
@@ -524,13 +524,31 @@
     </div>
 
     <script>
+        const ESTADOS_CON_FOTO = ['entregada', 'rechazada'];
+
+        function toggleFotoField(value) {
+            const wrapper = document.getElementById('photoWrapper');
+            if (wrapper) {
+                wrapper.style.display = ESTADOS_CON_FOTO.includes(value) ? 'block' : 'none';
+            }
+        }
+
         function setEstado(value) {
             const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
             if (sel) {
                 sel.value = value;
+                toggleFotoField(value);
                 document.getElementById('updateForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
+            if (sel) {
+                sel.addEventListener('change', () => toggleFotoField(sel.value));
+                toggleFotoField(sel.value);
+            }
+        });
 
         function onFileChange(input) {
             const label = document.querySelector('.file-label-text');

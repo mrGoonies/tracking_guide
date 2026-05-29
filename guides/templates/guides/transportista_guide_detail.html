@@ -467,7 +467,7 @@
                     {{ form.nuevo_estado }}
                 </div>
 
-                <div class="field">
+                <div class="field" id="photoWrapper" style="display:none;">
                     <label>Foto de evidencia <span style="color:#dc3545;">*</span></label>
                     <div class="photo-upload">
                         <input type="file" id="photoInput" name="evidencia_foto"
@@ -530,13 +530,31 @@
     </div>
 
     <script>
+        const ESTADOS_CON_FOTO = ['entregada', 'rechazada'];
+
+        function toggleFotoField(value) {
+            const wrapper = document.getElementById('photoWrapper');
+            if (wrapper) {
+                wrapper.style.display = ESTADOS_CON_FOTO.includes(value) ? 'block' : 'none';
+            }
+        }
+
         function setEstado(value) {
             const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
             if (sel) {
                 sel.value = value;
+                toggleFotoField(value);
                 document.getElementById('updateForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
+            if (sel) {
+                sel.addEventListener('change', () => toggleFotoField(sel.value));
+                toggleFotoField(sel.value);
+            }
+        });
 
         function onPhoto(input) {
             const label = document.getElementById('photoLabel');
