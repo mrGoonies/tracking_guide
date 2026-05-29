@@ -16,7 +16,7 @@ from openpyxl import Workbook
 from .decorators import admin_or_coordinador_required
 from .forms import CreateDispatchGuideForm, UpdateGuideStateForm
 from .utils import get_home_url_for_user, is_transportista, is_coordinador
-from .models import Client, DispatchGuide, GuideStage
+from .models import Client, DispatchGuide, GuideStage, GuideStagePhoto
 
 def home(request):
     if request.user.is_authenticated:
@@ -341,15 +341,18 @@ def guide_detail(request, guide_id):
             evidencia_foto = form.cleaned_data.get('evidencia_foto')
             notas = form.cleaned_data.get('notas', '')
 
-            if nuevo_estado in ('entregada', 'rechazada') and not evidencia_foto:
-                form.add_error('evidencia_foto', 'La foto es obligatoria al marcar como entregada o rechazada.')
+            fotos = request.FILES.getlist('evidencia_fotos')
+
+            if nuevo_estado in ('entregada', 'rechazada') and not fotos:
+                form.add_error('evidencia_foto', 'Debes subir al menos una foto al marcar como entregada o rechazada.')
             else:
-                GuideStage.objects.create(
+                stage = GuideStage.objects.create(
                     guia=guide,
                     estado=nuevo_estado,
-                    foto=evidencia_foto,
                     observaciones=notas
                 )
+                for i, foto in enumerate(fotos):
+                    GuideStagePhoto.objects.create(etapa=stage, foto=foto, orden=i)
 
                 guide.estado = nuevo_estado
                 if nuevo_estado in ['entregada', 'rechazada'] and not guide.fecha_envio:

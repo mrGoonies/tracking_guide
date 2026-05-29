@@ -468,17 +468,19 @@
                 </div>
 
                 <div class="field" id="photoWrapper" style="display:none;">
-                    <label>Foto de evidencia <span style="color:#dc3545;">*</span></label>
+                    <label>Fotos de evidencia <span style="color:#dc3545;">*</span></label>
+                    <p style="font-size:12px; color:#666; margin:0 0 8px;">Puedes subir varias fotos (guía firmada, productos, etc.)</p>
                     <div class="photo-upload">
-                        <input type="file" id="photoInput" name="evidencia_foto"
-                               class="photo-input" accept="image/*" capture="environment"
+                        <input type="file" id="photoInput" name="evidencia_fotos"
+                               class="photo-input" accept="image/*" multiple
                                onchange="onPhoto(this)">
                         <label for="photoInput" class="photo-label" id="photoLabel">
                             <span class="photo-icon">📷</span>
-                            <span class="photo-label-title">Tomar foto</span>
-                            <span class="photo-label-hint">o seleccionar desde la galería</span>
+                            <span class="photo-label-title">Tomar foto o seleccionar imágenes</span>
+                            <span class="photo-label-hint">Puedes seleccionar múltiples fotos a la vez</span>
                         </label>
                     </div>
+                    <div id="photoPreviewList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
                 </div>
 
                 <div class="field">
@@ -517,7 +519,16 @@
                     {% if stage.observaciones %}
                     <div class="tl-obs">{{ stage.observaciones }}</div>
                     {% endif %}
-                    {% if stage.foto %}
+                    {% if stage.fotos.all %}
+                    <div class="tl-photos" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+                        {% for p in stage.fotos.all %}
+                        <a href="{{ p.foto.url }}" target="_blank">
+                            <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}"
+                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #ddd;">
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% elif stage.foto %}
                     <div class="tl-photo">
                         <img src="{{ stage.foto.url }}" alt="Evidencia">
                     </div>
@@ -558,13 +569,27 @@
 
         function onPhoto(input) {
             const label = document.getElementById('photoLabel');
-            if (input.files && input.files[0]) {
-                label.classList.add('has-file');
-                label.innerHTML = `
-                    <span class="photo-icon">✅</span>
-                    <span class="photo-label-title">Foto lista</span>
-                    <span class="photo-filename">${input.files[0].name}</span>`;
-            }
+            const preview = document.getElementById('photoPreviewList');
+            preview.innerHTML = '';
+
+            if (!input.files || !input.files.length) return;
+
+            const count = input.files.length;
+            label.classList.add('has-file');
+            label.innerHTML = `
+                <span class="photo-icon">✅</span>
+                <span class="photo-label-title">${count} foto${count > 1 ? 's' : ''} seleccionada${count > 1 ? 's' : ''}</span>`;
+
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #ddd;';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
         }
     </script>
 

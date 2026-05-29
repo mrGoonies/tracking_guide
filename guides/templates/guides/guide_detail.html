@@ -464,15 +464,16 @@
 
                 <div class="field" id="photoWrapper" style="display:none;">
                     <label>Evidencia Fotográfica <span style="color:#c0392b;">*</span></label>
-                    <label class="file-label" for="id_evidencia_foto">
-                        <input type="file" id="id_evidencia_foto" name="evidencia_foto"
-                               accept="image/*" capture="environment"
+                    <p style="font-size:12px; color:#666; margin:0 0 8px;">Puedes subir varias fotos (guía firmada, productos, etc.)</p>
+                    <label class="file-label" for="id_evidencia_fotos">
+                        <input type="file" id="id_evidencia_fotos" name="evidencia_fotos"
+                               accept="image/*" multiple
                                onchange="onFileChange(this)">
                         <span class="file-label-icon">📷</span>
-                        <span class="file-label-text">Tomar foto o seleccionar imagen</span>
-                        <span class="file-label-hint">JPG, PNG — requerida al entregar o rechazar</span>
-                        <span class="file-name" id="fileName"></span>
+                        <span class="file-label-text" id="fileLabelText">Tomar foto o seleccionar imágenes</span>
+                        <span class="file-label-hint" id="fileLabelHint">Puedes seleccionar múltiples fotos a la vez</span>
                     </label>
+                    <div id="photoPreviewList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
                     {% if form.evidencia_foto.errors %}
                     <div style="font-size:12px; color:#c0392b; margin-top:5px;">{{ form.evidencia_foto.errors.0 }}</div>
                     {% endif %}
@@ -511,7 +512,16 @@
                     {% if stage.observaciones %}
                     <div class="timeline-obs">{{ stage.observaciones }}</div>
                     {% endif %}
-                    {% if stage.foto %}
+                    {% if stage.fotos.all %}
+                    <div class="timeline-photos" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+                        {% for p in stage.fotos.all %}
+                        <a href="{{ p.foto.url }}" target="_blank">
+                            <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}"
+                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #ddd;">
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% elif stage.foto %}
                     <div class="timeline-photo">
                         <img src="{{ stage.foto.url }}" alt="Evidencia fotográfica">
                     </div>
@@ -551,15 +561,27 @@
         });
 
         function onFileChange(input) {
-            const label = document.querySelector('.file-label-text');
-            const hint  = document.querySelector('.file-label-hint');
-            const name  = document.getElementById('fileName');
-            if (input.files && input.files[0]) {
-                name.textContent = input.files[0].name;
-                name.style.display = 'block';
-                label.textContent = 'Imagen seleccionada';
-                hint.style.display = 'none';
-            }
+            const labelText = document.getElementById('fileLabelText');
+            const labelHint = document.getElementById('fileLabelHint');
+            const preview   = document.getElementById('photoPreviewList');
+            preview.innerHTML = '';
+
+            if (!input.files || !input.files.length) return;
+
+            const count = input.files.length;
+            labelText.textContent = `${count} imagen${count > 1 ? 'es' : ''} seleccionada${count > 1 ? 's' : ''}`;
+            labelHint.style.display = 'none';
+
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #ddd;';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
         }
     </script>
 

@@ -101,3 +101,18 @@ class GuideStage(models.Model):
 
     def __str__(self):
         return f"Guía {self.guia.numero_guia} - {self.estado} ({self.timestamp})"
+
+
+class GuideStagePhoto(models.Model):
+    """Fotos adicionales de una etapa (para entregada/rechazada)."""
+    etapa = models.ForeignKey(GuideStage, on_delete=models.CASCADE, related_name='fotos')
+    foto = models.ImageField(upload_to='tracking/guide_photos/%Y/%m/%d/')
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Foto de Etapa"
+        verbose_name_plural = "Fotos de Etapas"
+        ordering = ['orden', 'id']
+
+    def __str__(self):
+        return f"Foto {self.orden + 1} — {self.etapa}"
