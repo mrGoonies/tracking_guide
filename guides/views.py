@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -379,3 +379,104 @@ def guide_detail(request, guide_id):
         'back_url': back_url,
     }
     return render(request, template, context)
+
+
+@admin_or_coordinador_required
+def transportista_report(request):
+    from_date_str = request.GET.get('from_date', '')
+    to_date_str = request.GET.get('to_date', '')
+
+    guides_qs = DispatchGuide.objects.filter(
+        transportista__isnull=False
+    ).select_related('transportista', 'cliente').prefetch_related(
+        Prefetch('etapas', queryset=GuideStage.objects.order_by('timestamp'))
+    )
+
+    try:
+        if from_date_str:
+            guides_qs = guides_qs.filter(
+                fecha_creacion__date__gte=datetime.strptime(from_date_str, '%Y-%m-%d').date()
+            )
+        if to_date_str:
+            guides_qs = guides_qs.filter(
+                fecha_creacion__date__lte=datetime.strptime(to_date_str, '%Y-%m-%d').date()
+            )
+    except ValueError:
+        pass
+
+    transportistas_map = {}
+
+    for guide in guides_qs:
+        t = guide.transportista
+        if t.id not in transportistas_map:
+            nombre = t.get_full_name() or t.username
+            transportistas_map[t.id] = {
+                'transportista': t,
+                'nombre': nombre,
+                'por_despachar': 0,
+                'en_ruta': 0,
+                'entregadas': 0,
+                'rechazadas': 0,
+                'cerradas': 0,
+                'total': 0,
+                '_tiempos': [],
+            }
+
+        data = transportistas_map[t.id]
+        data['total'] += 1
+
+        if guide.estado in ('emitida', 'asignada'):
+            data['por_despachar'] += 1
+        elif guide.estado == 'en_ruta':
+            data['en_ruta'] += 1
+        elif guide.estado == 'entregada':
+            data['entregadas'] += 1
+        elif guide.estado == 'rechazada':
+            data['rechazadas'] += 1
+        elif guide.estado == 'cerrada':
+            data['cerradas'] += 1
+
+        etapas = list(guide.etapas.all())
+        etapa_en_ruta = next((e for e in etapas if e.estado == 'en_ruta'), None)
+        etapa_final = next((e for e in etapas if e.estado in ('entregada', 'rechazada')), None)
+        if etapa_en_ruta and etapa_final:
+            segundos = (etapa_final.timestamp - etapa_en_ruta.timestamp).total_seconds()
+            if segundos > 0:
+                data['_tiempos'].append(segundos)
+
+    def fmt_time(seconds):
+        h = int(seconds // 3600)
+        m = int((seconds % 3600) // 60)
+        return f"{h}h {m:02d}m"
+
+    report_data = []
+    for data in transportistas_map.values():
+        tiempos = data.pop('_tiempos')
+        data['completadas'] = data['entregadas'] + data['rechazadas']
+        if tiempos:
+            data['avg_time'] = fmt_time(sum(tiempos) / len(tiempos))
+            data['min_time'] = fmt_time(min(tiempos))
+            data['max_time'] = fmt_time(max(tiempos))
+            data['guias_con_tiempo'] = len(tiempos)
+        else:
+            data['avg_time'] = data['min_time'] = data['max_time'] = None
+            data['guias_con_tiempo'] = 0
+        report_data.append(data)
+
+    report_data.sort(key=lambda x: x['total'], reverse=True)
+
+    totals = {
+        'total':         sum(d['total'] for d in report_data),
+        'por_despachar': sum(d['por_despachar'] for d in report_data),
+        'en_ruta':       sum(d['en_ruta'] for d in report_data),
+        'entregadas':    sum(d['entregadas'] for d in report_data),
+        'rechazadas':    sum(d['rechazadas'] for d in report_data),
+        'completadas':   sum(d['completadas'] for d in report_data),
+    }
+
+    return render(request, 'guides/transportista_report.html', {
+        'report_data': report_data,
+        'totals': totals,
+        'from_date': from_date_str,
+        'to_date': to_date_str,
+    })

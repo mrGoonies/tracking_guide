@@ -469,18 +469,37 @@
 
                 <div class="field" id="photoWrapper" style="display:none;">
                     <label>Fotos de evidencia <span style="color:#dc3545;">*</span></label>
-                    <p style="font-size:12px; color:#666; margin:0 0 8px;">Puedes subir varias fotos (guía firmada, productos, etc.)</p>
-                    <div class="photo-upload">
-                        <input type="file" id="photoInput" name="evidencia_fotos"
-                               class="photo-input" accept="image/*" multiple
-                               onchange="onPhoto(this)">
-                        <label for="photoInput" class="photo-label" id="photoLabel">
-                            <span class="photo-icon">📷</span>
-                            <span class="photo-label-title">Tomar foto o seleccionar imágenes</span>
-                            <span class="photo-label-hint">Puedes seleccionar múltiples fotos a la vez</span>
-                        </label>
+                    <p style="font-size:12px; color:#666; margin:0 0 8px;">Saca las fotos necesarias (guía firmada, productos, etc.)</p>
+
+                    <!-- Input oculto real que acumula los archivos y se envía con el form -->
+                    <input type="file" id="photoInput" name="evidencia_fotos"
+                           accept="image/*" multiple style="display:none;">
+
+                    <!-- Input cámara — se activa con el botón, no se envía -->
+                    <input type="file" id="cameraCapture"
+                           accept="image/*" capture="environment" style="display:none;"
+                           onchange="addFromCamera(this)">
+
+                    <!-- Input galería — se activa con el botón, no se envía -->
+                    <input type="file" id="galleryPicker"
+                           accept="image/*" multiple style="display:none;"
+                           onchange="addFromGallery(this)">
+
+                    <div style="display:flex; gap:10px; margin-top:4px;">
+                        <button type="button" onclick="document.getElementById('cameraCapture').click()"
+                                style="flex:1; padding:14px 8px; background:#2d7a35; color:#fff;
+                                       border:none; border-radius:10px; font-size:15px; font-weight:600;">
+                            Tomar foto
+                        </button>
+                        <button type="button" onclick="document.getElementById('galleryPicker').click()"
+                                style="flex:1; padding:14px 8px; background:#fff; color:#2d7a35;
+                                       border:2px solid #2d7a35; border-radius:10px; font-size:15px; font-weight:600;">
+                            Galería
+                        </button>
                     </div>
-                    <div id="photoPreviewList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+
+                    <div id="photoPreviewList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"></div>
+                    <p id="photoCount" style="font-size:12px; color:#2d7a35; margin:6px 0 0; display:none;"></p>
                 </div>
 
                 <div class="field">
@@ -567,29 +586,75 @@
             }
         });
 
-        function onPhoto(input) {
-            const label = document.getElementById('photoLabel');
+        // Acumula fotos en un DataTransfer para poder agregar de a una desde la cámara
+        const dt = new DataTransfer();
+
+        function syncMainInput() {
+            document.getElementById('photoInput').files = dt.files;
+            const count = dt.files.length;
+            const counter = document.getElementById('photoCount');
+            if (count > 0) {
+                counter.style.display = 'block';
+                counter.textContent = `${count} foto${count > 1 ? 's' : ''} lista${count > 1 ? 's' : ''}`;
+            } else {
+                counter.style.display = 'none';
+            }
+        }
+
+        function renderPreview() {
             const preview = document.getElementById('photoPreviewList');
             preview.innerHTML = '';
-
-            if (!input.files || !input.files.length) return;
-
-            const count = input.files.length;
-            label.classList.add('has-file');
-            label.innerHTML = `
-                <span class="photo-icon">✅</span>
-                <span class="photo-label-title">${count} foto${count > 1 ? 's' : ''} seleccionada${count > 1 ? 's' : ''}</span>`;
-
-            Array.from(input.files).forEach(file => {
+            Array.from(dt.files).forEach((file, idx) => {
                 const reader = new FileReader();
                 reader.onload = e => {
+                    const wrap = document.createElement('div');
+                    wrap.style.cssText = 'position:relative; width:80px; height:80px;';
+
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #ddd;';
-                    preview.appendChild(img);
+                    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #2d7a35;';
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = '✕';
+                    btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;' +
+                        'border-radius:50%;background:#dc3545;color:#fff;border:none;' +
+                        'font-size:11px;cursor:pointer;line-height:20px;padding:0;';
+                    btn.onclick = () => removePhoto(idx);
+
+                    wrap.appendChild(img);
+                    wrap.appendChild(btn);
+                    preview.appendChild(wrap);
                 };
                 reader.readAsDataURL(file);
             });
+        }
+
+        function removePhoto(idx) {
+            const newDt = new DataTransfer();
+            Array.from(dt.files).forEach((f, i) => { if (i !== idx) newDt.items.add(f); });
+            dt.items.clear();
+            Array.from(newDt.files).forEach(f => dt.items.add(f));
+            syncMainInput();
+            renderPreview();
+        }
+
+        function addFromCamera(input) {
+            if (input.files && input.files[0]) {
+                dt.items.add(input.files[0]);
+                input.value = '';
+                syncMainInput();
+                renderPreview();
+            }
+        }
+
+        function addFromGallery(input) {
+            if (input.files && input.files.length) {
+                Array.from(input.files).forEach(f => dt.items.add(f));
+                input.value = '';
+                syncMainInput();
+                renderPreview();
+            }
         }
     </script>
 

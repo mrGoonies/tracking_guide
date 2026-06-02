@@ -25,3 +25,5 @@ Thumbs.db
 
 # Collected static files
 staticfiles/
+
+.claude

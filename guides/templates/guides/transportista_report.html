@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Transportistas — Irritec</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f4f6f8;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        /* Topbar */
+        .topbar {
+            background: #2d7a35;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+        }
+        .topbar-left { display: flex; align-items: center; gap: 12px; }
+        .topbar-back {
+            color: rgba(255,255,255,.85);
+            text-decoration: none;
+            font-size: 20px;
+            line-height: 1;
+        }
+        .topbar-back:hover { color: #fff; }
+        .topbar-title { font-size: 17px; font-weight: 700; }
+        .topbar-sub { font-size: 12px; opacity: .75; }
+
+        /* Layout */
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+
+        /* Filtro */
+        .filter-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+        }
+        .filter-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
+        .filter-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-group label { font-size: 12px; color: #555; font-weight: 500; }
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1a1a2e;
+        }
+        .btn-filter {
+            padding: 9px 20px;
+            background: #2d7a35;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-clear {
+            padding: 9px 16px;
+            background: #f4f6f8;
+            color: #555;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        /* KPI cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .kpi-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 18px 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            border-top: 3px solid #ddd;
+            text-align: center;
+        }
+        .kpi-card.green  { border-top-color: #2d7a35; }
+        .kpi-card.blue   { border-top-color: #1a56db; }
+        .kpi-card.orange { border-top-color: #f0a500; }
+        .kpi-card.teal   { border-top-color: #17a2b8; }
+        .kpi-card.red    { border-top-color: #dc3545; }
+        .kpi-card.purple { border-top-color: #6f42c1; }
+        .kpi-value { font-size: 32px; font-weight: 800; color: #1a1a2e; line-height: 1; }
+        .kpi-label { font-size: 12px; color: #666; margin-top: 6px; }
+
+        /* Table */
+        .table-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-title { font-size: 16px; font-weight: 700; }
+        .table-sub { font-size: 12px; color: #888; margin-top: 2px; }
+
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table thead th {
+            background: #f8faf8;
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            border-bottom: 2px solid #e8f0e8;
+            white-space: nowrap;
+        }
+        .report-table thead th.center { text-align: center; }
+        .report-table tbody tr { border-bottom: 1px solid #f4f6f8; }
+        .report-table tbody tr:last-child { border-bottom: none; }
+        .report-table tbody tr:hover { background: #f8fdf8; }
+        .report-table tbody td { padding: 12px 14px; font-size: 14px; vertical-align: middle; }
+        .report-table tbody td.center { text-align: center; }
+        .report-table tfoot td {
+            padding: 12px 14px;
+            font-weight: 700;
+            font-size: 14px;
+            background: #f8faf8;
+            border-top: 2px solid #e8f0e8;
+        }
+        .report-table tfoot td.center { text-align: center; }
+
+        /* Transportista cell */
+        .t-avatar {
+            width: 36px; height: 36px;
+            background: #e8f5e9;
+            color: #2d7a35;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .t-info { display: flex; align-items: center; gap: 10px; }
+        .t-name { font-weight: 600; font-size: 14px; }
+        .t-username { font-size: 11px; color: #888; }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .badge-despachar { background: #fff3cd; color: #856404; }
+        .badge-en-ruta   { background: #cff4fc; color: #0c5460; }
+        .badge-entregada { background: #d1e7dd; color: #0a5c36; }
+        .badge-rechazada { background: #f8d7da; color: #842029; }
+        .badge-total     { background: #e8f5e9; color: #2d7a35; }
+
+        /* Tiempo */
+        .time-cell { font-size: 13px; }
+        .time-avg { font-weight: 700; color: #1a1a2e; }
+        .time-range { font-size: 11px; color: #888; margin-top: 2px; }
+        .time-na { color: #bbb; font-size: 12px; }
+
+        /* Empty state */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #999;
+        }
+        .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+            .report-table thead th:nth-child(n+5),
+            .report-table tbody td:nth-child(n+5),
+            .report-table tfoot td:nth-child(n+5) { display: none; }
+            .t-username { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="{% url 'hub' %}" class="topbar-back">←</a>
+        <div>
+            <div class="topbar-title">Reporte por Transportista</div>
+            {% if from_date or to_date %}
+            <div class="topbar-sub">
+                Filtrado:
+                {% if from_date %}desde {{ from_date }}{% endif %}
+                {% if to_date %}hasta {{ to_date }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    {% if messages %}
+    {% for message in messages %}
+    <div style="background:{% if 'error' in message.tags %}#f8d7da{% else %}#d1e7dd{% endif %};
+                color:{% if 'error' in message.tags %}#842029{% else %}#0a5c36{% endif %};
+                padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px;">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Filtro por fechas -->
+    <div class="filter-card">
+        <div class="filter-title">Filtrar por fecha de creación de guía</div>
+        <form method="get" class="filter-row">
+            <div class="filter-group">
+                <label>Desde</label>
+                <input type="date" name="from_date" value="{{ from_date }}">
+            </div>
+            <div class="filter-group">
+                <label>Hasta</label>
+                <input type="date" name="to_date" value="{{ to_date }}">
+            </div>
+            <button type="submit" class="btn-filter">Aplicar</button>
+            {% if from_date or to_date %}
+            <a href="{% url 'transportista_report' %}" class="btn-clear">Limpiar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- KPIs globales -->
+    <div class="kpi-grid">
+        <div class="kpi-card green">
+            <div class="kpi-value">{{ report_data|length }}</div>
+            <div class="kpi-label">Transportistas activos</div>
+        </div>
+        <div class="kpi-card blue">
+            <div class="kpi-value">{{ totals.total }}</div>
+            <div class="kpi-label">Guías totales</div>
+        </div>
+        <div class="kpi-card orange">
+            <div class="kpi-value">{{ totals.por_despachar }}</div>
+            <div class="kpi-label">Por despachar</div>
+        </div>
+        <div class="kpi-card teal">
+            <div class="kpi-value">{{ totals.en_ruta }}</div>
+            <div class="kpi-label">En ruta ahora</div>
+        </div>
+        <div class="kpi-card green">
+            <div class="kpi-value">{{ totals.entregadas }}</div>
+            <div class="kpi-label">Entregadas</div>
+        </div>
+        <div class="kpi-card red">
+            <div class="kpi-value">{{ totals.rechazadas }}</div>
+            <div class="kpi-label">Rechazadas</div>
+        </div>
+    </div>
+
+    <!-- Tabla consolidada -->
+    <div class="table-card">
+        <div class="table-header">
+            <div>
+                <div class="table-title">Consolidado por Transportista</div>
+                <div class="table-sub">Tiempo calculado desde estado "En Ruta" hasta "Entregada" o "Rechazada"</div>
+            </div>
+        </div>
+
+        {% if report_data %}
+        <div style="overflow-x:auto;">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Transportista</th>
+                    <th class="center">Total guías</th>
+                    <th class="center">Por despachar</th>
+                    <th class="center">En ruta</th>
+                    <th class="center">Entregadas</th>
+                    <th class="center">Rechazadas</th>
+                    <th class="center">Tiempo promedio</th>
+                    <th class="center">Tiempo mín / máx</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in report_data %}
+                <tr>
+                    <td>
+                        <div class="t-info">
+                            <div class="t-avatar">{{ d.nombre|slice:":1"|upper }}</div>
+                            <div>
+                                <div class="t-name">{{ d.nombre }}</div>
+                                <div class="t-username">@{{ d.transportista.username }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="center">
+                        <span class="badge badge-total">{{ d.total }}</span>
+                    </td>
+                    <td class="center">
+                        {% if d.por_despachar %}
+                        <span class="badge badge-despachar">{{ d.por_despachar }}</span>
+                        {% else %}
+                        <span style="color:#ccc;">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        {% if d.en_ruta %}
+                        <span class="badge badge-en-ruta">{{ d.en_ruta }}</span>
+                        {% else %}
+                        <span style="color:#ccc;">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        {% if d.entregadas %}
+                        <span class="badge badge-entregada">{{ d.entregadas }}</span>
+                        {% else %}
+                        <span style="color:#ccc;">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        {% if d.rechazadas %}
+                        <span class="badge badge-rechazada">{{ d.rechazadas }}</span>
+                        {% else %}
+                        <span style="color:#ccc;">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        {% if d.avg_time %}
+                        <div class="time-cell">
+                            <div class="time-avg">{{ d.avg_time }}</div>
+                            <div class="time-range">({{ d.guias_con_tiempo }} guía{{ d.guias_con_tiempo|pluralize:"s" }})</div>
+                        </div>
+                        {% else %}
+                        <span class="time-na">Sin datos</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        {% if d.min_time %}
+                        <div class="time-cell">
+                            <div class="time-range">Mín: <strong>{{ d.min_time }}</strong></div>
+                            <div class="time-range">Máx: <strong>{{ d.max_time }}</strong></div>
+                        </div>
+                        {% else %}
+                        <span class="time-na">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Total general</td>
+                    <td class="center"><span class="badge badge-total">{{ totals.total }}</span></td>
+                    <td class="center"><span class="badge badge-despachar">{{ totals.por_despachar }}</span></td>
+                    <td class="center"><span class="badge badge-en-ruta">{{ totals.en_ruta }}</span></td>
+                    <td class="center"><span class="badge badge-entregada">{{ totals.entregadas }}</span></td>
+                    <td class="center"><span class="badge badge-rechazada">{{ totals.rechazadas }}</span></td>
+                    <td class="center" colspan="2" style="color:#888; font-size:12px; font-weight:400;">
+                        Tiempo calculado sobre guías con etapas completas
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div>No hay guías asignadas a transportistas en el período seleccionado.</div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>

@@ -189,6 +189,7 @@
         .icon-green  { background: #e8f5e9; }
         .icon-blue   { background: #e3f0ff; }
         .icon-purple { background: #f3e8ff; }
+        .icon-teal   { background: #e0f7fa; }
         .icon-orange { background: #fff4e5; }
 
         .nav-text-title {
@@ -304,6 +305,13 @@
                 <div>
                     <div class="nav-text-title">Dashboard</div>
                     <div class="nav-text-desc">Métricas y resumen del estado general</div>
+                </div>
+            </a>
+            <a href="{% url 'transportista_report' %}" class="nav-card">
+                <div class="nav-icon icon-teal">🚛</div>
+                <div>
+                    <div class="nav-text-title">Reporte Transportistas</div>
+                    <div class="nav-text-desc">Consolidado de guías y tiempos de entrega por transportista</div>
                 </div>
             </a>
         </div>

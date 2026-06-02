@@ -13,4 +13,5 @@ urlpatterns = [
     path('guias/exportar-planificacion/', views.export_route_planning, name='export_route_planning'),
     path('transportista/mis-guias/', views.transportista_guides, name='transportista_guides'),
     path('inicio/', views.hub, name='hub'),
+    path('reportes/transportistas/', views.transportista_report, name='transportista_report'),
 ]
