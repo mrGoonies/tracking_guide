@@ -108,3 +108,15 @@ class UpdateGuideStateForm(forms.Form):
             'class': 'form-textarea'
         })
     )
+
+
+class ImportClientCSVForm(forms.Form):
+    archivo_csv = forms.FileField(
+        label='Archivo CSV',
+        widget=forms.FileInput(attrs={'accept': '.csv'})
+    )
+    actualizar_existentes = forms.BooleanField(
+        label='Actualizar clientes si el RUT ya existe',
+        required=False,
+        initial=True,
+    )

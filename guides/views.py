@@ -1,3 +1,5 @@
+import csv
+import io
 from datetime import timedelta, datetime
 from io import BytesIO
 
@@ -13,8 +15,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from openpyxl import Workbook
-from .decorators import admin_or_coordinador_required
-from .forms import CreateDispatchGuideForm, UpdateGuideStateForm
+from .decorators import admin_or_coordinador_required, admin_required
+from .forms import CreateDispatchGuideForm, UpdateGuideStateForm, ImportClientCSVForm
 from .utils import get_home_url_for_user, is_transportista, is_coordinador
 from .models import Client, DispatchGuide, GuideStage, GuideStagePhoto
 
@@ -480,3 +482,94 @@ def transportista_report(request):
         'from_date': from_date_str,
         'to_date': to_date_str,
     })
+
+
+@admin_required
+def import_clients(request):
+    result = None
+
+    if request.method == 'POST':
+        form = ImportClientCSVForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = request.FILES['archivo_csv']
+            actualizar = form.cleaned_data['actualizar_existentes']
+
+            try:
+                texto = archivo.read().decode('utf-8-sig')
+            except UnicodeDecodeError:
+                try:
+                    archivo.seek(0)
+                    texto = archivo.read().decode('latin-1')
+                except Exception:
+                    messages.error(request, 'No se pudo leer el archivo. Verifica que sea UTF-8 o Latin-1.')
+                    return render(request, 'guides/import_clients.html', {'form': form})
+
+            # Detectar separador automáticamente
+            muestra = texto[:2048]
+            separador = ';' if muestra.count(';') >= muestra.count(',') else ','
+
+            reader = csv.DictReader(io.StringIO(texto), delimiter=separador)
+
+            # Normalizar nombres de columnas (strip + lower)
+            campos_requeridos = {'rut', 'nombre', 'direccion_facturacion'}
+            if not reader.fieldnames:
+                messages.error(request, 'El archivo CSV está vacío o no tiene encabezados.')
+                return render(request, 'guides/import_clients.html', {'form': form})
+
+            columnas = {c.strip().lower(): c for c in reader.fieldnames}
+            if not campos_requeridos.issubset(columnas.keys()):
+                faltantes = campos_requeridos - set(columnas.keys())
+                messages.error(request, f'Faltan columnas requeridas: {", ".join(faltantes)}')
+                return render(request, 'guides/import_clients.html', {'form': form})
+
+            creados = 0
+            actualizados = 0
+            errores = []
+
+            for i, row in enumerate(reader, start=2):
+                # Normalizar claves de la fila
+                fila = {k.strip().lower(): (v.strip() if v else '') for k, v in row.items()}
+
+                rut = fila.get('rut', '')
+                nombre = fila.get('nombre', '')
+                dir_facturacion = fila.get('direccion_facturacion', '')
+                dir_entrega = fila.get('direccion_entrega_preferida', '') or None
+
+                if not rut or not nombre or not dir_facturacion:
+                    errores.append({
+                        'fila': i,
+                        'rut': rut or '—',
+                        'motivo': 'Faltan campos obligatorios (rut, nombre o dirección de facturación)',
+                    })
+                    continue
+
+                try:
+                    cliente, created = Client.objects.get_or_create(
+                        rut=rut,
+                        defaults={
+                            'nombre': nombre,
+                            'direccion_facturacion': dir_facturacion,
+                            'direccion_entrega_preferida': dir_entrega,
+                        }
+                    )
+                    if created:
+                        creados += 1
+                    elif actualizar:
+                        cliente.nombre = nombre
+                        cliente.direccion_facturacion = dir_facturacion
+                        cliente.direccion_entrega_preferida = dir_entrega
+                        cliente.save()
+                        actualizados += 1
+                except Exception as e:
+                    errores.append({'fila': i, 'rut': rut, 'motivo': str(e)})
+
+            result = {
+                'creados': creados,
+                'actualizados': actualizados,
+                'errores': errores,
+                'total_procesados': creados + actualizados + len(errores),
+            }
+    else:
+        form = ImportClientCSVForm()
+
+    return render(request, 'guides/import_clients.html', {'form': form, 'result': result})

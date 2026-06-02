@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Clientes — Irritec</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f4f6f8;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: #2d7a35;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 24px;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+        }
+        .topbar-back { color: rgba(255,255,255,.85); text-decoration: none; font-size: 20px; }
+        .topbar-back:hover { color: #fff; }
+        .topbar-title { font-size: 17px; font-weight: 700; }
+
+        .container { max-width: 760px; margin: 0 auto; padding: 28px 16px 48px; }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* Formato CSV */
+        .format-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+        .format-table th {
+            background: #f8faf8;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #e0e0e0;
+            color: #2d7a35;
+        }
+        .format-table td {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            color: #444;
+        }
+        .badge-req {
+            display: inline-block;
+            background: #dc3545;
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+        .badge-opt {
+            display: inline-block;
+            background: #6c757d;
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+        .csv-example {
+            background: #f8faf8;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            margin-top: 12px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        /* Formulario */
+        .field { margin-bottom: 18px; }
+        .field label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+        .file-upload-area {
+            border: 2px dashed #c8e6c9;
+            border-radius: 10px;
+            padding: 28px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            position: relative;
+        }
+        .file-upload-area:hover { border-color: #2d7a35; background: #f8fdf8; }
+        .file-upload-area input[type=file] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .upload-icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-title { font-size: 15px; font-weight: 600; color: #2d7a35; }
+        .upload-hint { font-size: 12px; color: #888; margin-top: 4px; }
+        .upload-filename { font-size: 13px; color: #2d7a35; font-weight: 600; margin-top: 8px; display: none; }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .checkbox-row input { width: 16px; height: 16px; accent-color: #2d7a35; cursor: pointer; }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #2d7a35;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-submit:hover { background: #1e5c28; }
+        .btn-submit:disabled { background: #9ab89c; cursor: not-allowed; }
+
+        /* Resultados */
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .result-stat {
+            background: #f8faf8;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border-top: 3px solid #ddd;
+        }
+        .result-stat.created { border-top-color: #2d7a35; }
+        .result-stat.updated { border-top-color: #1a56db; }
+        .result-stat.errors  { border-top-color: #dc3545; }
+        .result-value { font-size: 36px; font-weight: 800; color: #1a1a2e; }
+        .result-label { font-size: 12px; color: #666; margin-top: 4px; }
+
+        /* Tabla errores */
+        .error-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .error-table th {
+            background: #fff5f5;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #842029;
+            border-bottom: 2px solid #f8d7da;
+        }
+        .error-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f8f8f8;
+            vertical-align: top;
+        }
+        .error-table tr:last-child td { border-bottom: none; }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .alert-error { background: #f8d7da; color: #842029; }
+        .alert-success { background: #d1e7dd; color: #0a5c36; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="{% url 'hub' %}" class="topbar-back">←</a>
+    <div class="topbar-title">Importar Clientes desde CSV</div>
+</div>
+
+<div class="container">
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert {% if 'error' in message.tags %}alert-error{% else %}alert-success{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if result %}
+    <!-- Resultados de la importación -->
+    <div class="card">
+        <div class="card-title">Resultado de la importación</div>
+
+        <div class="result-grid">
+            <div class="result-stat created">
+                <div class="result-value">{{ result.creados }}</div>
+                <div class="result-label">Clientes creados</div>
+            </div>
+            <div class="result-stat updated">
+                <div class="result-value">{{ result.actualizados }}</div>
+                <div class="result-label">Clientes actualizados</div>
+            </div>
+            <div class="result-stat errors">
+                <div class="result-value">{{ result.errores|length }}</div>
+                <div class="result-label">Filas con error</div>
+            </div>
+        </div>
+
+        <p style="font-size:13px; color:#666; margin-bottom:16px;">
+            Total de filas procesadas: <strong>{{ result.total_procesados }}</strong>
+        </p>
+
+        {% if result.errores %}
+        <div style="font-size:14px; font-weight:600; color:#842029; margin-bottom:10px;">
+            Filas con errores (no importadas)
+        </div>
+        <div style="overflow-x:auto;">
+        <table class="error-table">
+            <thead>
+                <tr>
+                    <th>Fila</th>
+                    <th>RUT</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for err in result.errores %}
+                <tr>
+                    <td>{{ err.fila }}</td>
+                    <td>{{ err.rut }}</td>
+                    <td style="color:#842029;">{{ err.motivo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'import_clients' %}"
+       style="display:block; text-align:center; padding:12px; background:#f4f6f8;
+              border:1px solid #ddd; border-radius:8px; text-decoration:none; color:#555; font-size:14px;">
+        Importar otro archivo
+    </a>
+
+    {% else %}
+    <!-- Instrucciones de formato -->
+    <div class="card">
+        <div class="card-title">Formato esperado del CSV</div>
+
+        <table class="format-table">
+            <thead>
+                <tr>
+                    <th>Columna</th>
+                    <th>Descripción</th>
+                    <th>Obligatorio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>rut</code></td>
+                    <td>RUT del cliente (identificador único)</td>
+                    <td><span class="badge-req">Requerido</span></td>
+                </tr>
+                <tr>
+                    <td><code>nombre</code></td>
+                    <td>Razón social o nombre del cliente</td>
+                    <td><span class="badge-req">Requerido</span></td>
+                </tr>
+                <tr>
+                    <td><code>direccion_facturacion</code></td>
+                    <td>Dirección de facturación del cliente</td>
+                    <td><span class="badge-req">Requerido</span></td>
+                </tr>
+                <tr>
+                    <td><code>direccion_entrega_preferida</code></td>
+                    <td>Dirección de entrega habitual (puede quedar vacío)</td>
+                    <td><span class="badge-opt">Opcional</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="font-size:12px; color:#888; margin-top:10px;">
+            El separador puede ser <strong>coma (,)</strong> o <strong>punto y coma (;)</strong> — se detecta automáticamente.
+            La codificación debe ser <strong>UTF-8</strong> o <strong>Latin-1</strong>.
+        </p>
+
+        <div class="csv-example">
+rut,nombre,direccion_facturacion,direccion_entrega_preferida<br>
+12345678-9,Empresa Ejemplo SpA,Av. Los Leones 123 Las Condes,<br>
+98765432-1,Constructora Sur Ltda,Calle Bío-Bío 456 Concepción,Ruta 5 Sur km 500<br>
+11111111-1,Agricola Norte SA,Km 10 Ruta 5 Norte Arica,
+        </div>
+    </div>
+
+    <!-- Formulario de carga -->
+    <div class="card">
+        <div class="card-title">Cargar archivo</div>
+
+        <form method="post" enctype="multipart/form-data" id="importForm">
+            {% csrf_token %}
+
+            <div class="field">
+                <label>Archivo CSV</label>
+                <div class="file-upload-area" id="uploadArea">
+                    <input type="file" name="archivo_csv" accept=".csv" required
+                           onchange="onFileSelect(this)">
+                    <div class="upload-icon">📂</div>
+                    <div class="upload-title">Haz clic para seleccionar el archivo</div>
+                    <div class="upload-hint">Solo archivos .csv</div>
+                    <div class="upload-filename" id="uploadFilename"></div>
+                </div>
+                {% if form.archivo_csv.errors %}
+                <div style="color:#dc3545; font-size:12px; margin-top:4px;">{{ form.archivo_csv.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <label class="checkbox-row">
+                    <input type="checkbox" name="actualizar_existentes"
+                           {% if form.actualizar_existentes.value %}checked{% endif %}>
+                    <span>Actualizar datos si el RUT ya existe en el sistema</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn" disabled>
+                Importar clientes
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function onFileSelect(input) {
+        const area     = document.getElementById('uploadArea');
+        const filename = document.getElementById('uploadFilename');
+        const btn      = document.getElementById('submitBtn');
+
+        if (input.files && input.files[0]) {
+            const name = input.files[0].name;
+            filename.textContent = '✓ ' + name;
+            filename.style.display = 'block';
+            area.style.borderColor = '#2d7a35';
+            area.style.background  = '#f8fdf8';
+            btn.disabled = false;
+        } else {
+            filename.style.display = 'none';
+            btn.disabled = true;
+        }
+    }
+</script>
+
+</body>
+</html>

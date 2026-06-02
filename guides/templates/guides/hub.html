@@ -314,6 +314,15 @@
                     <div class="nav-text-desc">Consolidado de guías y tiempos de entrega por transportista</div>
                 </div>
             </a>
+            {% if user.is_staff %}
+            <a href="{% url 'import_clients' %}" class="nav-card">
+                <div class="nav-icon icon-orange">📥</div>
+                <div>
+                    <div class="nav-text-title">Importar Clientes</div>
+                    <div class="nav-text-desc">Cargar clientes desde archivo CSV</div>
+                </div>
+            </a>
+            {% endif %}
         </div>
 
     </div>
