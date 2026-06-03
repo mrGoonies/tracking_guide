@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Guías desde Excel — Irritec</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f8; color: #1a1a2e; min-height: 100vh; }
+
+        .topbar { background: #2d7a35; color: #fff; display: flex; align-items: center; gap: 12px; padding: 0 24px; height: 56px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+        .topbar-back { color: rgba(255,255,255,.85); text-decoration: none; font-size: 20px; }
+        .topbar-back:hover { color: #fff; }
+        .topbar-title { font-size: 17px; font-weight: 700; }
+
+        .container { max-width: 820px; margin: 0 auto; padding: 28px 16px 48px; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 20px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+
+        /* Tabla de columnas */
+        .col-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+        .col-table th { background: #f8faf8; padding: 8px 12px; text-align: left; font-weight: 600; border: 1px solid #e0e0e0; color: #2d7a35; }
+        .col-table td { padding: 8px 12px; border: 1px solid #e0e0e0; color: #444; vertical-align: top; }
+        .col-table tr:nth-child(even) td { background: #fafafa; }
+        code { background: #f0f4f0; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #1e5c28; }
+        .badge-req { display: inline-block; background: #dc3545; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+        .badge-opt { display: inline-block; background: #6c757d; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+
+        .info-box { background: #fff8e1; border-left: 4px solid #f0a500; border-radius: 6px; padding: 12px 14px; font-size: 13px; color: #5a3e00; margin-top: 12px; }
+
+        /* Formulario */
+        .field { margin-bottom: 18px; }
+        .field label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+        .file-upload-area { border: 2px dashed #c8e6c9; border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; position: relative; }
+        .file-upload-area:hover { border-color: #2d7a35; background: #f8fdf8; }
+        .file-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .upload-icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-title { font-size: 15px; font-weight: 600; color: #2d7a35; }
+        .upload-hint { font-size: 12px; color: #888; margin-top: 4px; }
+        .upload-filename { font-size: 13px; color: #2d7a35; font-weight: 600; margin-top: 8px; display: none; }
+        .checkbox-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; }
+        .checkbox-row input { width: 16px; height: 16px; accent-color: #2d7a35; cursor: pointer; margin-top: 2px; flex-shrink: 0; }
+        .checkbox-desc { font-size: 12px; color: #888; margin-top: 2px; }
+        .btn-submit { width: 100%; padding: 14px; background: #2d7a35; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+        .btn-submit:hover { background: #1e5c28; }
+        .btn-submit:disabled { background: #9ab89c; cursor: not-allowed; }
+
+        /* Resultados */
+        .result-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .result-stat { background: #f8faf8; border-radius: 10px; padding: 16px; text-align: center; border-top: 3px solid #ddd; }
+        .result-stat.green  { border-top-color: #2d7a35; }
+        .result-stat.blue   { border-top-color: #1a56db; }
+        .result-stat.yellow { border-top-color: #f0a500; }
+        .result-stat.red    { border-top-color: #dc3545; }
+        .result-value { font-size: 36px; font-weight: 800; color: #1a1a2e; }
+        .result-label { font-size: 12px; color: #666; margin-top: 4px; }
+
+        .error-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .error-table th { background: #fff5f5; padding: 8px 12px; text-align: left; font-weight: 600; color: #842029; border-bottom: 2px solid #f8d7da; }
+        .error-table td { padding: 8px 12px; border-bottom: 1px solid #f8f8f8; vertical-align: top; }
+        .error-table tr:last-child td { border-bottom: none; }
+
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+        .alert-error   { background: #f8d7da; color: #842029; }
+        .alert-success { background: #d1e7dd; color: #0a5c36; }
+
+        @media (max-width: 600px) { .result-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="{% url 'hub' %}" class="topbar-back">←</a>
+    <div class="topbar-title">Importar Guías desde Excel ERP</div>
+</div>
+
+<div class="container">
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert {% if 'error' in message.tags %}alert-error{% else %}alert-success{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    {% if result %}
+
+    <!-- Resultados -->
+    <div class="card">
+        <div class="card-title">Resultado de la importación</div>
+        <div class="result-grid">
+            <div class="result-stat green">
+                <div class="result-value">{{ result.creadas }}</div>
+                <div class="result-label">Guías creadas</div>
+            </div>
+            <div class="result-stat blue">
+                <div class="result-value">{{ result.actualizadas }}</div>
+                <div class="result-label">Guías actualizadas</div>
+            </div>
+            <div class="result-stat yellow">
+                <div class="result-value">{{ result.omitidas_cr }}</div>
+                <div class="result-label">Omitidas (cliente retira)</div>
+            </div>
+            <div class="result-stat red">
+                <div class="result-value">{{ result.errores|length }}</div>
+                <div class="result-label">Filas con error</div>
+            </div>
+        </div>
+
+        <p style="font-size:13px; color:#666; margin-bottom:16px;">
+            Total de filas procesadas: <strong>{{ result.total }}</strong>
+        </p>
+
+        {% if result.errores %}
+        <div style="font-size:14px; font-weight:600; color:#842029; margin-bottom:10px;">Filas con errores (no importadas)</div>
+        <div style="overflow-x:auto;">
+        <table class="error-table">
+            <thead><tr><th>Fila</th><th>N° Guía</th><th>Motivo</th></tr></thead>
+            <tbody>
+            {% for err in result.errores %}
+            <tr>
+                <td>{{ err.fila }}</td>
+                <td>{{ err.guia }}</td>
+                <td style="color:#842029;">{{ err.motivo }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'import_guides_excel' %}"
+       style="display:block; text-align:center; padding:12px; background:#f4f6f8; border:1px solid #ddd; border-radius:8px; text-decoration:none; color:#555; font-size:14px;">
+        Importar otro archivo
+    </a>
+
+    {% else %}
+
+    <!-- Columnas esperadas -->
+    <div class="card">
+        <div class="card-title">Columnas que se leerán del Excel</div>
+        <table class="col-table">
+            <thead><tr><th>Columna en Excel</th><th>Campo en sistema</th><th>Notas</th></tr></thead>
+            <tbody>
+                <tr><td><code>GUÍA</code></td><td>Número de guía <span class="badge-req">Requerido</span></td><td>Identificador único de la guía</td></tr>
+                <tr><td><code>NV</code></td><td>Nota de Venta</td><td></td></tr>
+                <tr><td><code>Creación</code></td><td>Fecha creación NV</td><td>Formato DD/MM/YYYY o YYYY-MM-DD</td></tr>
+                <tr><td><code>F.ENVÍO</code></td><td>Fecha de envío</td><td></td></tr>
+                <tr><td><code>DESPACHO</code></td><td>Fecha de despacho</td><td></td></tr>
+                <tr><td><code>RUT CLIENTE</code></td><td>Cliente <span class="badge-req">Requerido</span></td><td>El cliente debe existir en el sistema</td></tr>
+                <tr><td><code>CLIENTE</code></td><td>Solo referencia</td><td>Se usa el RUT para vincular el cliente</td></tr>
+                <tr><td><code>REFERENCIA</code></td><td>Notas de la guía</td><td>Si contiene "cliente retira" la fila se omite</td></tr>
+                <tr><td><code>CREADO POR</code></td><td>Vendedor / Asistente</td><td>Se busca por nombre en el sistema; si no existe se guarda como texto</td></tr>
+                <tr><td><code>TRANSPORTE</code></td><td>Transportista</td><td>Se busca por nombre entre los usuarios del grupo Transportista</td></tr>
+            </tbody>
+        </table>
+        <div class="info-box">
+            <strong>Filas "cliente retira":</strong> si la columna <code>REFERENCIA</code> contiene el texto "cliente retira" (sin importar mayúsculas), la fila se omite automáticamente ya que el producto no requiere despacho.
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card">
+        <div class="card-title">Cargar archivo</div>
+        <form method="post" enctype="multipart/form-data" id="importForm">
+            {% csrf_token %}
+
+            <div class="field">
+                <label>Archivo Excel</label>
+                <div class="file-upload-area" id="uploadArea">
+                    <input type="file" name="archivo_excel" accept=".xlsx,.xls,.xlsm" required onchange="onFileSelect(this)">
+                    <div class="upload-icon">📊</div>
+                    <div class="upload-title">Haz clic para seleccionar el archivo</div>
+                    <div class="upload-hint">Archivos .xlsx, .xls o .xlsm exportados desde el ERP</div>
+                    <div class="upload-filename" id="uploadFilename"></div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="checkbox-row">
+                    <input type="checkbox" name="omitir_cliente_retira" checked>
+                    <div>
+                        <div>Omitir filas donde REFERENCIA contiene "cliente retira"</div>
+                        <div class="checkbox-desc">Recomendado: estas entregas no requieren despacho por parte de logística</div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="field">
+                <label class="checkbox-row">
+                    <input type="checkbox" name="actualizar_existentes">
+                    <div>
+                        <div>Actualizar guía si el número ya existe</div>
+                        <div class="checkbox-desc">Si está desactivado, las guías existentes se omiten silenciosamente</div>
+                    </div>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn" disabled>
+                Importar guías
+            </button>
+        </form>
+    </div>
+
+    {% endif %}
+</div>
+
+<script>
+    function onFileSelect(input) {
+        const area     = document.getElementById('uploadArea');
+        const filename = document.getElementById('uploadFilename');
+        const btn      = document.getElementById('submitBtn');
+        if (input.files && input.files[0]) {
+            filename.textContent = '✓ ' + input.files[0].name;
+            filename.style.display = 'block';
+            area.style.borderColor = '#2d7a35';
+            area.style.background  = '#f8fdf8';
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>

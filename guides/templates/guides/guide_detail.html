@@ -347,6 +347,8 @@
             .info-grid { grid-template-columns: 1fr; }
         }
     </style>
+    {% load static %}
+    <script src="{% static 'guides/js/camera.js' %}" defer></script>
 </head>
 <body>
 
@@ -464,32 +466,30 @@
 
                 <div class="field" id="photoWrapper" style="display:none;">
                     <label>Evidencia Fotográfica <span style="color:#c0392b;">*</span></label>
-                    <p style="font-size:12px; color:#666; margin:0 0 8px;">Agrega las fotos necesarias (guía firmada, productos, etc.)</p>
 
-                    <input type="file" id="id_evidencia_fotos" name="evidencia_fotos"
-                           accept="image/*" multiple style="display:none;">
-                    <input type="file" id="cameraCapture"
-                           accept="image/*" capture="environment" style="display:none;"
-                           onchange="addFromCamera(this)">
-                    <input type="file" id="galleryPicker"
-                           accept="image/*" multiple style="display:none;"
-                           onchange="addFromGallery(this)">
+                    <input type="file" id="id_evidencia_fotos" name="evidencia_fotos" accept="image/*" multiple style="display:none;">
+                    <input type="file" id="irCamFallback" accept="image/*" capture="environment" style="display:none;" onchange="onFallbackFile(this)">
+                    <input type="file" id="galleryPicker" accept="image/*" multiple style="display:none;" onchange="addFromGallery(this)">
 
-                    <div style="display:flex; gap:10px; margin-top:4px;">
-                        <button type="button" onclick="document.getElementById('cameraCapture').click()"
-                                style="flex:1; padding:12px 8px; background:#2d7a35; color:#fff;
-                                       border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
-                            Tomar foto
-                        </button>
-                        <button type="button" onclick="document.getElementById('galleryPicker').click()"
-                                style="flex:1; padding:12px 8px; background:#fff; color:#2d7a35;
-                                       border:2px solid #2d7a35; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
-                            Galería
-                        </button>
-                    </div>
+                    <button type="button" id="btnOpenCamera"
+                            style="display:block; width:100%; padding:16px 8px; margin-top:8px;
+                                   background:#2d7a35; color:#fff; border:none; border-radius:10px;
+                                   font-size:16px; font-weight:700; cursor:pointer;">
+                        Tomar foto
+                    </button>
+                    <p style="font-size:11px; color:#888; text-align:center; margin:5px 0 12px;">
+                        Puedes sacar varias fotos seguidas sin cerrar la cámara
+                    </p>
 
-                    <div id="photoPreviewList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"></div>
-                    <p id="photoCount" style="font-size:12px; color:#2d7a35; margin:6px 0 0; display:none;"></p>
+                    <button type="button" onclick="document.getElementById('galleryPicker').click()"
+                            style="display:block; width:100%; padding:11px 8px;
+                                   background:#f4f6f8; color:#444; border:1px solid #ddd;
+                                   border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                        Adjuntar foto existente
+                    </button>
+
+                    <div id="photoPreviewList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;"></div>
+                    <p id="photoCount" style="font-size:12px; color:#2d7a35; font-weight:600; margin:6px 0 0; display:none;"></p>
                     {% if form.evidencia_foto.errors %}
                     <div style="font-size:12px; color:#c0392b; margin-top:5px;">{{ form.evidencia_foto.errors.0 }}</div>
                     {% endif %}
@@ -580,29 +580,29 @@
 
         function syncMainInput() {
             document.getElementById('id_evidencia_fotos').files = dt.files;
-            const count = dt.files.length;
+            const n = dt.files.length;
             const counter = document.getElementById('photoCount');
-            counter.style.display = count > 0 ? 'block' : 'none';
-            if (count > 0) counter.textContent = `${count} foto${count > 1 ? 's' : ''} lista${count > 1 ? 's' : ''}`;
+            counter.style.display = n > 0 ? 'block' : 'none';
+            counter.textContent = n + ' foto' + (n !== 1 ? 's' : '') + ' lista' + (n !== 1 ? 's' : '');
         }
 
         function renderPreview() {
             const preview = document.getElementById('photoPreviewList');
             preview.innerHTML = '';
-            Array.from(dt.files).forEach((file, idx) => {
+            Array.from(dt.files).forEach(function (file, idx) {
                 const reader = new FileReader();
-                reader.onload = e => {
+                reader.onload = function (e) {
                     const wrap = document.createElement('div');
-                    wrap.style.cssText = 'position:relative; width:80px; height:80px;';
+                    wrap.style.cssText = 'position:relative;width:80px;height:80px;';
                     const img = document.createElement('img');
                     img.src = e.target.result;
                     img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #2d7a35;';
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.textContent = '✕';
-                    btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;' +
-                        'border-radius:50%;background:#dc3545;color:#fff;border:none;font-size:11px;cursor:pointer;';
-                    btn.onclick = () => removePhoto(idx);
+                    btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:22px;height:22px;' +
+                        'border-radius:50%;background:#dc3545;color:#fff;border:none;font-size:12px;cursor:pointer;';
+                    btn.onclick = function () { removePhoto(idx); };
                     wrap.appendChild(img);
                     wrap.appendChild(btn);
                     preview.appendChild(wrap);
@@ -613,30 +613,42 @@
 
         function removePhoto(idx) {
             const newDt = new DataTransfer();
-            Array.from(dt.files).forEach((f, i) => { if (i !== idx) newDt.items.add(f); });
+            Array.from(dt.files).forEach(function (f, i) { if (i !== idx) newDt.items.add(f); });
             dt.items.clear();
-            Array.from(newDt.files).forEach(f => dt.items.add(f));
+            Array.from(newDt.files).forEach(function (f) { dt.items.add(f); });
             syncMainInput();
             renderPreview();
         }
 
-        function addFromCamera(input) {
+        function onFallbackFile(input) {
             if (input.files && input.files[0]) {
                 dt.items.add(input.files[0]);
-                input.value = '';
                 syncMainInput();
                 renderPreview();
+                const clone = input.cloneNode(false);
+                clone.addEventListener('change', function () { onFallbackFile(clone); });
+                input.parentNode.replaceChild(clone, input);
             }
         }
 
         function addFromGallery(input) {
             if (input.files && input.files.length) {
-                Array.from(input.files).forEach(f => dt.items.add(f));
+                Array.from(input.files).forEach(function (f) { dt.items.add(f); });
                 input.value = '';
                 syncMainInput();
                 renderPreview();
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('btnOpenCamera').addEventListener('click', function () {
+                IrritecCamera.open(function (file) {
+                    dt.items.add(file);
+                    syncMainInput();
+                    renderPreview();
+                });
+            });
+        });
     </script>
 
 </body>

@@ -1,6 +1,7 @@
 import csv
 import io
-from datetime import timedelta, datetime
+import unicodedata
+from datetime import timedelta, datetime, date as date_type
 from io import BytesIO
 
 from django.shortcuts import render, redirect
@@ -14,11 +15,12 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+import openpyxl
 from openpyxl import Workbook
 from .decorators import admin_or_coordinador_required, admin_required
-from .forms import CreateDispatchGuideForm, UpdateGuideStateForm, ImportClientCSVForm
+from .forms import CreateDispatchGuideForm, UpdateGuideStateForm, ImportClientCSVForm, ImportDispatchExcelForm
 from .utils import get_home_url_for_user, is_transportista, is_coordinador
-from .models import Client, DispatchGuide, GuideStage, GuideStagePhoto
+from .models import Client, DispatchGuide, GuideStage, GuideStagePhoto, Seller
 
 def home(request):
     if request.user.is_authenticated:
@@ -573,3 +575,254 @@ def import_clients(request):
         form = ImportClientCSVForm()
 
     return render(request, 'guides/import_clients.html', {'form': form, 'result': result})
+
+
+# ── Helpers para importación Excel ─────────────────────────────────────────
+
+def _norm_col(name):
+    """Normaliza nombre de columna: sin acentos, mayúsculas, sin espacios/puntos."""
+    nfkd = unicodedata.normalize('NFKD', str(name))
+    ascii_str = nfkd.encode('ASCII', 'ignore').decode('ASCII')
+    return ascii_str.strip().upper().replace(' ', '_').replace('.', '').replace('°', '').replace('#', '')
+
+
+def _find_col(headers, candidates):
+    for c in candidates:
+        if c in headers:
+            return headers[c]
+    return None
+
+
+def _parse_date(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date_type):
+        return value
+    if isinstance(value, str):
+        for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y'):
+            try:
+                return datetime.strptime(value.strip(), fmt).date()
+            except ValueError:
+                continue
+    return None
+
+
+@admin_or_coordinador_required
+def bulk_assign_guides(request):
+    transportistas = User.objects.filter(groups__name='Transportista').order_by('first_name', 'last_name')
+
+    transportista_id = request.GET.get('transportista') or request.POST.get('transportista')
+    transportista_sel = None
+    guides = DispatchGuide.objects.none()
+
+    if transportista_id:
+        try:
+            transportista_sel = User.objects.get(id=transportista_id, groups__name='Transportista')
+            guides = DispatchGuide.objects.filter(
+                estado__in=['emitida', 'asignada']
+            ).select_related('cliente', 'transportista').order_by('fecha_despacho', '-fecha_creacion')
+        except User.DoesNotExist:
+            pass
+
+    if request.method == 'POST' and transportista_sel:
+        ids = request.POST.getlist('guia_ids')
+        if ids:
+            guias_a_asignar = DispatchGuide.objects.filter(id__in=ids)
+            for guide in guias_a_asignar:
+                guide.transportista = transportista_sel
+                guide.estado = 'asignada'
+                guide.save()
+                GuideStage.objects.create(
+                    guia=guide,
+                    estado='asignada',
+                    observaciones=f'Asignada a {transportista_sel.get_full_name() or transportista_sel.username}'
+                )
+            messages.success(request, f'✓ {len(ids)} guía(s) asignadas a {transportista_sel.get_full_name() or transportista_sel.username}.')
+            return redirect(f'{request.path}?transportista={transportista_sel.id}')
+
+    context = {
+        'transportistas': transportistas,
+        'transportista_sel': transportista_sel,
+        'guides': guides,
+    }
+    return render(request, 'guides/bulk_assign_guides.html', context)
+
+
+# ── Vista de importación ────────────────────────────────────────────────────
+
+@admin_or_coordinador_required
+def import_guides_excel(request):
+    result = None
+
+    if request.method == 'POST':
+        form = ImportDispatchExcelForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = request.FILES['archivo_excel']
+            omitir_cr = form.cleaned_data.get('omitir_cliente_retira', True)
+            actualizar = form.cleaned_data.get('actualizar_existentes', False)
+
+            try:
+                wb = openpyxl.load_workbook(archivo, data_only=True)
+                ws = wb.active
+            except Exception as e:
+                messages.error(request, f'No se pudo leer el archivo: {e}')
+                return render(request, 'guides/import_guides.html', {'form': form})
+
+            # Detectar fila de encabezados (primera fila con contenido)
+            headers = {}
+            header_row_idx = None
+            for row in ws.iter_rows():
+                if any(c.value for c in row):
+                    for cell in row:
+                        if cell.value and _norm_col(str(cell.value)) not in headers:
+                            headers[_norm_col(str(cell.value))] = cell.column - 1
+                    header_row_idx = cell.row
+                    break
+
+            if not headers:
+                messages.error(request, 'El archivo está vacío o no tiene encabezados.')
+                return render(request, 'guides/import_guides.html', {'form': form})
+
+            col = {
+                'guia':         _find_col(headers, ['GUIA', 'GUIA_DE_DESPACHO', 'N_GUIA']),
+                'nv':           _find_col(headers, ['NV']),
+                'creacion':     _find_col(headers, ['CREACION', 'FECHA_CREACION']),
+                'fecha_envio':  _find_col(headers, ['FENVIO', 'F_ENVIO', 'FECHA_ENVIO', 'ENVIO']),
+                'rut_cliente':  _find_col(headers, ['RUT_CLIENTE', 'RUTCLIENTE', 'RUT']),
+                'referencia':   _find_col(headers, ['REFERENCIA']),
+                'creado_por':   _find_col(headers, ['CREADO_POR', 'CREADOPOR', 'VENDEDOR']),
+                'cliente':      _find_col(headers, ['CLIENTE']),
+                'transporte':   _find_col(headers, ['TRANSPORTE']),
+                'despacho':     _find_col(headers, ['DESPACHO', 'FECHA_DESPACHO']),
+            }
+
+            creadas = 0
+            actualizadas = 0
+            omitidas_cr = 0
+            errores = []
+
+            for row_num, row in enumerate(
+                ws.iter_rows(min_row=header_row_idx + 1, values_only=True),
+                start=header_row_idx + 1
+            ):
+                if not any(v for v in row if v is not None):
+                    continue
+
+                def cell(key):
+                    idx = col.get(key)
+                    if idx is None or idx >= len(row):
+                        return None
+                    val = row[idx]
+                    if isinstance(val, str):
+                        val = val.strip()
+                    return val if val not in ('', None) else None
+
+                referencia = str(cell('referencia') or '')
+                if omitir_cr and 'cliente retira' in referencia.lower():
+                    omitidas_cr += 1
+                    continue
+
+                numero_guia = cell('guia')
+                rut_raw = cell('rut_cliente')
+
+                if not numero_guia:
+                    errores.append({'fila': row_num, 'guia': '—', 'motivo': 'Número de guía vacío'})
+                    continue
+                numero_guia = str(numero_guia).strip()
+
+                if not rut_raw:
+                    errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': 'RUT cliente vacío'})
+                    continue
+                rut = str(rut_raw).strip()
+
+                try:
+                    cliente = Client.objects.get(rut=rut)
+                except Client.DoesNotExist:
+                    errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': f'Cliente RUT {rut} no existe en el sistema'})
+                    continue
+
+                nv_fecha = _parse_date(cell('creacion'))
+                fecha_envio = _parse_date(cell('fecha_envio'))
+                fecha_despacho = _parse_date(cell('despacho'))
+                nv = str(cell('nv') or '').strip() or None
+
+                # Vendedor
+                creado_por_raw = str(cell('creado_por') or '').strip()
+                vendedor_obj = None
+                vendedor_nombre = None
+                if creado_por_raw:
+                    vendedor_obj = Seller.objects.filter(nombre__icontains=creado_por_raw).first()
+                    if not vendedor_obj:
+                        vendedor_nombre = creado_por_raw
+
+                # Transportista
+                transporte_raw = str(cell('transporte') or '').strip()
+                transportista = None
+                if transporte_raw:
+                    transportista = User.objects.filter(
+                        groups__name='Transportista'
+                    ).filter(
+                        Q(first_name__icontains=transporte_raw) |
+                        Q(last_name__icontains=transporte_raw) |
+                        Q(username__icontains=transporte_raw)
+                    ).first()
+
+                # ¿Ya existe?
+                existing = DispatchGuide.objects.filter(numero_guia=numero_guia).first()
+                if existing:
+                    if actualizar:
+                        if nv:              existing.nv = nv
+                        if nv_fecha:        existing.nv_fecha_creacion = nv_fecha
+                        if fecha_envio:     existing.fecha_envio = fecha_envio
+                        if fecha_despacho:  existing.fecha_despacho = fecha_despacho
+                        if referencia:      existing.notas = referencia
+                        if vendedor_obj:    existing.vendedor = vendedor_obj
+                        if vendedor_nombre: existing.vendedor_nombre = vendedor_nombre
+                        if transportista and existing.estado == 'emitida':
+                            existing.transportista = transportista
+                            existing.estado = 'asignada'
+                        elif transportista:
+                            existing.transportista = transportista
+                        existing.save()
+                        actualizadas += 1
+                    continue
+
+                # Crear guía nueva
+                estado_inicial = 'asignada' if transportista else 'emitida'
+                direccion = cliente.direccion_entrega_preferida or cliente.direccion_facturacion
+
+                guide = DispatchGuide.objects.create(
+                    numero_guia=numero_guia,
+                    nv=nv,
+                    nv_fecha_creacion=nv_fecha,
+                    cliente=cliente,
+                    direccion_entrega=direccion,
+                    usa_direccion_facturacion=not bool(cliente.direccion_entrega_preferida),
+                    vendedor=vendedor_obj,
+                    vendedor_nombre=vendedor_nombre,
+                    transportista=transportista,
+                    fecha_envio=fecha_envio,
+                    fecha_despacho=fecha_despacho,
+                    notas=referencia or None,
+                    estado=estado_inicial,
+                )
+                GuideStage.objects.create(
+                    guia=guide,
+                    estado=estado_inicial,
+                    observaciones='Importada desde Excel ERP'
+                )
+                creadas += 1
+
+            result = {
+                'creadas': creadas,
+                'actualizadas': actualizadas,
+                'omitidas_cr': omitidas_cr,
+                'errores': errores,
+                'total': creadas + actualizadas + omitidas_cr + len(errores),
+            }
+    else:
+        form = ImportDispatchExcelForm()
+
+    return render(request, 'guides/import_guides.html', {'form': form, 'result': result})

@@ -110,6 +110,23 @@ class UpdateGuideStateForm(forms.Form):
     )
 
 
+class ImportDispatchExcelForm(forms.Form):
+    archivo_excel = forms.FileField(
+        label='Archivo Excel (.xlsx / .xls / .xlsm)',
+        widget=forms.FileInput(attrs={'accept': '.xlsx,.xls,.xlsm'})
+    )
+    omitir_cliente_retira = forms.BooleanField(
+        label='Omitir filas donde REFERENCIA contiene "cliente retira"',
+        required=False,
+        initial=True,
+    )
+    actualizar_existentes = forms.BooleanField(
+        label='Actualizar guía si el número ya existe en el sistema',
+        required=False,
+        initial=False,
+    )
+
+
 class ImportClientCSVForm(forms.Form):
     archivo_csv = forms.FileField(
         label='Archivo CSV',

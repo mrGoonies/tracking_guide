@@ -314,6 +314,20 @@
                     <div class="nav-text-desc">Consolidado de guías y tiempos de entrega por transportista</div>
                 </div>
             </a>
+            <a href="{% url 'bulk_assign_guides' %}" class="nav-card">
+                <div class="nav-icon icon-teal">🚚</div>
+                <div>
+                    <div class="nav-text-title">Asignar Guías</div>
+                    <div class="nav-text-desc">Asignar guías pendientes a un transportista</div>
+                </div>
+            </a>
+            <a href="{% url 'import_guides_excel' %}" class="nav-card">
+                <div class="nav-icon icon-green">📊</div>
+                <div>
+                    <div class="nav-text-title">Importar desde ERP</div>
+                    <div class="nav-text-desc">Crear guías de despacho desde Excel exportado del ERP</div>
+                </div>
+            </a>
             {% if user.is_staff %}
             <a href="{% url 'import_clients' %}" class="nav-card">
                 <div class="nav-icon icon-orange">📥</div>

@@ -15,4 +15,6 @@ urlpatterns = [
     path('inicio/', views.hub, name='hub'),
     path('reportes/transportistas/', views.transportista_report, name='transportista_report'),
     path('clientes/importar/', views.import_clients, name='import_clients'),
+    path('guias/importar-excel/', views.import_guides_excel, name='import_guides_excel'),
+    path('guias/asignar/', views.bulk_assign_guides, name='bulk_assign_guides'),
 ]
