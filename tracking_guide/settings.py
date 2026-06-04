@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 import dj_database_url
 
@@ -38,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'cloudinary_storage',
     'cloudinary',
+    'rest_framework',
+    'rest_framework_simplejwt',
     'guides',
 ]
 
@@ -145,3 +148,29 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Permite selección masiva en el admin sin límite de campos por POST
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
+
+# ──────────────────────────────────────────────
+# Django REST Framework
+# ──────────────────────────────────────────────
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
+# ──────────────────────────────────────────────
+# JWT — Access 8h / Refresh 30 días
+# ──────────────────────────────────────────────
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=8),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS':  True,
+    'AUTH_HEADER_TYPES':      ('Bearer',),
+    'TOKEN_OBTAIN_SERIALIZER': 'guides.api.serializers.CustomTokenObtainPairSerializer',
+}
