@@ -5,5 +5,6 @@ description = "internal app for manage guides"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "django-rest-framework>=0.1.0",
     "openpyxl>=3.1.5",
 ]
