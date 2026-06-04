@@ -142,3 +142,6 @@ LOGOUT_REDIRECT_URL = 'home'
 # Misc
 # ──────────────────────────────────────────────
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Permite selección masiva en el admin sin límite de campos por POST
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None

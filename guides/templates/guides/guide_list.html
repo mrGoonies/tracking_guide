@@ -230,16 +230,25 @@
 
         .card-top {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            justify-content: space-between;
             gap: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .card-top-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             flex-wrap: wrap;
+            min-width: 0;
         }
 
         .guide-number {
             font-size: 15px;
             font-weight: 700;
             color: #1a1a1a;
+            white-space: nowrap;
         }
 
         .guide-nv {
@@ -248,6 +257,7 @@
             background: #f5f5f5;
             padding: 2px 8px;
             border-radius: 6px;
+            white-space: nowrap;
         }
 
         .status-badge {
@@ -255,6 +265,7 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         .badge-emitida   { background: #f5f5f5;  color: #666; }
@@ -264,13 +275,59 @@
         .badge-rechazada { background: #f8d7da;  color: #721c24; }
         .badge-cerrada   { background: #e2e3e5;  color: #41464b; }
 
-        .card-meta {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px 16px;
+        .btn-detail {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 14px;
+            background: #f0f4f1;
+            color: #2d7a35;
+            border: 1.5px solid #a5d6a7;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background 0.2s, border-color 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .meta-item { display: flex; flex-direction: column; gap: 2px; }
+        .btn-detail:hover { background: #e8f5e9; border-color: #2d7a35; }
+
+        .btn-edit-address {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 14px;
+            background: #fff;
+            color: #555;
+            border: 1.5px solid #d1d5db;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.12s;
+        }
+        .btn-edit-address:hover {
+            background: #eef2ff;
+            border-color: #6366f1;
+            color: #4338ca;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.15);
+            transform: translateY(-1px);
+        }
+        .btn-edit-address:active {
+            transform: translateY(0) scale(0.97);
+            box-shadow: none;
+        }
+
+        .card-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 20px;
+        }
+
+        .meta-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 
         .meta-label {
             font-size: 11px;
@@ -284,33 +341,126 @@
             font-size: 13px;
             color: #333;
             font-weight: 500;
-            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        .card-action {
-            flex-shrink: 0;
-            align-self: center;
-        }
-
-        .btn-detail {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 9px 16px;
-            background: #f0f4f1;
-            color: #2d7a35;
-            border: 1.5px solid #a5d6a7;
-            border-radius: 9px;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            transition: background 0.2s, border-color 0.2s;
             white-space: nowrap;
         }
 
-        .btn-detail:hover { background: #e8f5e9; border-color: #2d7a35; }
+        .meta-value.wrap {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        /* Edición inline de dirección */
+        .edit-address-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            color: #aaa;
+            padding: 0 4px;
+            line-height: 1;
+            vertical-align: middle;
+            transition: color .15s;
+        }
+        .edit-address-btn:hover { color: #2d7a35; }
+
+        .maps-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #1a73e8;
+            text-decoration: none;
+            margin-top: 3px;
+            font-weight: 500;
+        }
+        .maps-link:hover { text-decoration: underline; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.18);
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+        }
+        .modal-field { margin-bottom: 14px; }
+        .modal-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+        .modal-field textarea,
+        .modal-field input[type=url] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .modal-field textarea:focus,
+        .modal-field input[type=url]:focus { border-color: #2d7a35; }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 18px;
+        }
+        .modal-btn-save {
+            padding: 10px 22px;
+            background: #2d7a35;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .modal-btn-save:hover { background: #1e5c28; }
+        .modal-btn-cancel {
+            padding: 10px 18px;
+            background: #f4f6f8;
+            color: #555;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .modal-error {
+            font-size: 12px;
+            color: #dc3545;
+            margin-top: 8px;
+            display: none;
+        }
 
         /* Empty state */
         .empty {
@@ -342,7 +492,6 @@
         /* Responsive */
         @media (max-width: 640px) {
             .card-meta { grid-template-columns: 1fr 1fr; }
-            .card-action { display: none; }
             .guide-card { cursor: pointer; }
             .toolbar { flex-direction: column; }
             .toolbar-right { width: 100%; }
@@ -429,21 +578,40 @@
             <div class="guide-card estado-{{ guide.estado }}"
                  onclick="window.location='{% url 'guide_detail' guide.id %}'">
                 <div class="card-main">
+
                     <div class="card-top">
-                        <span class="guide-number">Guía #{{ guide.numero_guia }}</span>
-                        {% if guide.nv %}
-                            <span class="guide-nv">NV: {{ guide.nv }}</span>
-                        {% endif %}
-                        <span class="status-badge badge-{{ guide.estado }}">
-                            {{ guide.get_estado_display }}
-                        </span>
+                        <div class="card-top-left">
+                            <span class="guide-number">Guía #{{ guide.numero_guia }}</span>
+                            {% if guide.nv %}
+                                <span class="guide-nv">NV: {{ guide.nv }}</span>
+                            {% endif %}
+                            <span class="status-badge badge-{{ guide.estado }}">
+                                {{ guide.get_estado_display }}
+                            </span>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-shrink:0;">
+                            <button type="button"
+                                    onclick="event.stopPropagation(); openAddressModal(
+                                        {{ guide.id }},
+                                        '{{ guide.direccion_entrega|escapejs }}',
+                                        '{{ guide.map_link|default:''|escapejs }}'
+                                    )"
+                                    class="btn-edit-address"
+                                    title="Editar dirección de entrega">
+                                Editar dirección
+                            </button>
+                            <a href="{% url 'guide_detail' guide.id %}" class="btn-detail">Ver →</a>
+                        </div>
                     </div>
+
                     <div class="card-meta">
                         <div class="meta-item">
                             <span class="meta-label">Cliente</span>
-                            <span class="meta-value" title="{{ guide.cliente.nombre }}">
-                                {{ guide.cliente.nombre }}
-                            </span>
+                            <span class="meta-value" title="{{ guide.cliente.nombre }}">{{ guide.cliente.nombre }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Vendedor</span>
+                            <span class="meta-value wrap">{{ guide.get_vendedor_display }}</span>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Transportista</span>
@@ -451,34 +619,30 @@
                                 {% if guide.transportista %}
                                     {{ guide.transportista.get_full_name|default:guide.transportista.username }}
                                 {% else %}
-                                    Sin asignar
+                                    <span style="color:#bbb;">Sin asignar</span>
                                 {% endif %}
                             </span>
                         </div>
                         <div class="meta-item">
-                            <span class="meta-label">Vendedor</span>
-                            <span class="meta-value">{{ guide.get_vendedor_display }}</span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Dirección</span>
-                            <span class="meta-value" title="{{ guide.direccion_entrega }}">
-                                {{ guide.direccion_entrega }}
-                            </span>
-                        </div>
-                        <div class="meta-item">
                             <span class="meta-label">Despacho</span>
-                            <span class="meta-value">
-                                {{ guide.fecha_despacho|date:"d/m/Y"|default:"—" }}
-                            </span>
+                            <span class="meta-value">{{ guide.fecha_despacho|date:"d/m/Y"|default:"—" }}</span>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Creada</span>
-                            <span class="meta-value">{{ guide.fecha_creacion|date:"d/m/Y" }}</span>
+                        <div class="meta-item" style="grid-column: span 2;">
+                            <span class="meta-label">Dirección</span>
+                            <span class="meta-value wrap"
+                                  id="dir-{{ guide.id }}"
+                                  title="{{ guide.direccion_entrega }}">{{ guide.direccion_entrega }}</span>
+                            <span id="maps-{{ guide.id }}">
+                                {% if guide.map_link %}
+                                <a href="{{ guide.map_link }}" target="_blank" rel="noopener"
+                                   class="maps-link" onclick="event.stopPropagation();">
+                                    📍 Ver en Google Maps
+                                </a>
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
-                </div>
-                <div class="card-action">
-                    <a href="{% url 'guide_detail' guide.id %}" class="btn-detail">Ver →</a>
+
                 </div>
             </div>
             {% endfor %}
@@ -507,9 +671,112 @@
 
     </div>
 
+    <!-- Modal editar dirección -->
+    <div class="modal-overlay" id="addressModal" onclick="closeAddressModal(event)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-title">Editar dirección de entrega</div>
+            <input type="hidden" id="modalGuideId">
+
+            <div class="modal-field">
+                <label>Dirección de entrega</label>
+                <textarea id="modalDireccion" rows="3" placeholder="Calle, número, comuna, ciudad"></textarea>
+            </div>
+
+            <div class="modal-field">
+                <label>Link Google Maps <span style="font-weight:400; text-transform:none; letter-spacing:0;">(opcional)</span></label>
+                <input type="url" id="modalMapLink" placeholder="https://maps.google.com/...">
+            </div>
+
+            <div class="modal-error" id="modalError"></div>
+
+            <div class="modal-actions">
+                <button type="button" class="modal-btn-cancel" onclick="closeAddressModal()">Cancelar</button>
+                <button type="button" class="modal-btn-save" id="modalSaveBtn" onclick="saveAddress()">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // En móvil toda la card es clickeable, en desktop el botón "Ver →"
-        // El onclick ya está en la card directamente
+        var CSRF_TOKEN = '{{ csrf_token }}';
+
+        function openAddressModal(guideId, direccion, mapLink) {
+            document.getElementById('modalGuideId').value = guideId;
+            document.getElementById('modalDireccion').value = direccion;
+            document.getElementById('modalMapLink').value = mapLink;
+            document.getElementById('modalError').style.display = 'none';
+            document.getElementById('addressModal').classList.add('open');
+            document.getElementById('modalDireccion').focus();
+        }
+
+        function closeAddressModal(e) {
+            if (!e || e.target === document.getElementById('addressModal')) {
+                document.getElementById('addressModal').classList.remove('open');
+            }
+        }
+
+        function saveAddress() {
+            var guideId   = document.getElementById('modalGuideId').value;
+            var direccion = document.getElementById('modalDireccion').value.trim();
+            var mapLink   = document.getElementById('modalMapLink').value.trim();
+            var errorEl   = document.getElementById('modalError');
+            var saveBtn   = document.getElementById('modalSaveBtn');
+
+            if (!direccion) {
+                errorEl.textContent = 'La dirección no puede estar vacía.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Guardando...';
+
+            var formData = new FormData();
+            formData.append('direccion_entrega', direccion);
+            formData.append('map_link', mapLink);
+            formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+
+            fetch('/guias/' + guideId + '/editar-direccion/', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    // Actualizar dirección en la card sin recargar
+                    var dirEl  = document.getElementById('dir-' + guideId);
+                    var mapsEl = document.getElementById('maps-' + guideId);
+                    if (dirEl) {
+                        dirEl.textContent = data.direccion;
+                        dirEl.title = data.direccion;
+                    }
+                    if (mapsEl) {
+                        if (data.map_link) {
+                            mapsEl.innerHTML = '<a href="' + data.map_link + '" target="_blank" rel="noopener" ' +
+                                'class="maps-link" onclick="event.stopPropagation();">📍 Ver en Google Maps</a>';
+                        } else {
+                            mapsEl.innerHTML = '';
+                        }
+                    }
+                    document.getElementById('addressModal').classList.remove('open');
+                } else {
+                    errorEl.textContent = data.error || 'Error al guardar.';
+                    errorEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                errorEl.textContent = 'Error de conexión. Intenta nuevamente.';
+                errorEl.style.display = 'block';
+            })
+            .finally(function() {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Guardar cambios';
+            });
+        }
+
+        // Cerrar modal con Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeAddressModal();
+        });
     </script>
 
 </body>

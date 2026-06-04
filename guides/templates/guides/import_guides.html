@@ -134,9 +134,57 @@
         Importar otro archivo
     </a>
 
+    {% elif step == 'select_sheet' %}
+
+    <!-- Paso 2: seleccionar libro -->
+    <div class="card">
+        <div class="card-title">Paso 2 — Selecciona el libro a importar</div>
+        <p style="font-size:13px; color:#666; margin-bottom:16px;">
+            Se encontraron <strong>{{ sheets|length }}</strong> libro(s) en el archivo. Elige el que contiene los datos a importar.
+        </p>
+
+        <form method="post" id="sheetForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="import">
+
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+                {% for sheet in sheets %}
+                <label style="display:flex; align-items:center; gap:12px; padding:14px 16px;
+                              border:2px solid #e0e0e0; border-radius:10px; cursor:pointer;
+                              transition:border-color .15s, background .15s;"
+                       onmouseover="this.style.borderColor='#2d7a35'; this.style.background='#f8fdf8';"
+                       onmouseout="this.style.borderColor='#e0e0e0'; this.style.background='#fff';"
+                       id="label_{{ forloop.counter }}">
+                    <input type="radio" name="hoja" value="{{ sheet }}"
+                           {% if forloop.first %}checked{% endif %}
+                           onchange="onSheetChange()"
+                           style="width:18px; height:18px; accent-color:#2d7a35;">
+                    <div>
+                        <div style="font-size:14px; font-weight:600; color:#1a1a2e;">{{ sheet }}</div>
+                        {% if 'todos' in sheet|lower or 'ax' in sheet|lower %}
+                        <div style="font-size:11px; color:#2d7a35; margin-top:2px;">
+                            Libro principal del ERP
+                        </div>
+                        {% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn-submit">
+                Importar libro seleccionado
+            </button>
+        </form>
+
+        <a href="{% url 'import_guides_excel' %}"
+           style="display:block; text-align:center; margin-top:12px; font-size:13px; color:#888; text-decoration:none;">
+            ← Volver y subir otro archivo
+        </a>
+    </div>
+
     {% else %}
 
-    <!-- Columnas esperadas -->
+    <!-- Paso 1: subir archivo -->
     <div class="card">
         <div class="card-title">Columnas que se leerán del Excel</div>
         <table class="col-table">
@@ -148,22 +196,21 @@
                 <tr><td><code>F.ENVÍO</code></td><td>Fecha de envío</td><td></td></tr>
                 <tr><td><code>DESPACHO</code></td><td>Fecha de despacho</td><td></td></tr>
                 <tr><td><code>RUT CLIENTE</code></td><td>Cliente <span class="badge-req">Requerido</span></td><td>El cliente debe existir en el sistema</td></tr>
-                <tr><td><code>CLIENTE</code></td><td>Solo referencia</td><td>Se usa el RUT para vincular el cliente</td></tr>
                 <tr><td><code>REFERENCIA</code></td><td>Notas de la guía</td><td>Si contiene "cliente retira" la fila se omite</td></tr>
-                <tr><td><code>CREADO POR</code></td><td>Vendedor / Asistente</td><td>Se busca por nombre en el sistema; si no existe se guarda como texto</td></tr>
-                <tr><td><code>TRANSPORTE</code></td><td>Transportista</td><td>Se busca por nombre entre los usuarios del grupo Transportista</td></tr>
+                <tr><td><code>CREADO POR</code></td><td>Vendedor / Asistente</td><td>Se busca por nombre; si no existe se guarda como texto</td></tr>
+                <tr><td><code>TRANSPORTE</code></td><td>Transportista</td><td>Se busca por nombre en el grupo Transportista</td></tr>
             </tbody>
         </table>
         <div class="info-box">
-            <strong>Filas "cliente retira":</strong> si la columna <code>REFERENCIA</code> contiene el texto "cliente retira" (sin importar mayúsculas), la fila se omite automáticamente ya que el producto no requiere despacho.
+            <strong>Filas "cliente retira":</strong> si <code>REFERENCIA</code> contiene ese texto, la fila se omite automáticamente.
         </div>
     </div>
 
-    <!-- Formulario -->
     <div class="card">
-        <div class="card-title">Cargar archivo</div>
+        <div class="card-title">Paso 1 — Cargar archivo</div>
         <form method="post" enctype="multipart/form-data" id="importForm">
             {% csrf_token %}
+            <input type="hidden" name="action" value="upload">
 
             <div class="field">
                 <label>Archivo Excel</label>
@@ -181,7 +228,7 @@
                     <input type="checkbox" name="omitir_cliente_retira" checked>
                     <div>
                         <div>Omitir filas donde REFERENCIA contiene "cliente retira"</div>
-                        <div class="checkbox-desc">Recomendado: estas entregas no requieren despacho por parte de logística</div>
+                        <div class="checkbox-desc">Recomendado: estas entregas no requieren despacho</div>
                     </div>
                 </label>
             </div>
@@ -191,13 +238,13 @@
                     <input type="checkbox" name="actualizar_existentes">
                     <div>
                         <div>Actualizar guía si el número ya existe</div>
-                        <div class="checkbox-desc">Si está desactivado, las guías existentes se omiten silenciosamente</div>
+                        <div class="checkbox-desc">Si está desactivado, las guías existentes se omiten</div>
                     </div>
                 </label>
             </div>
 
             <button type="submit" class="btn-submit" id="submitBtn" disabled>
-                Importar guías
+                Leer libros del archivo →
             </button>
         </form>
     </div>

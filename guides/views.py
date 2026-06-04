@@ -1,5 +1,7 @@
 import csv
 import io
+import os
+import tempfile
 import unicodedata
 from datetime import timedelta, datetime, date as date_type
 from io import BytesIO
@@ -13,6 +15,7 @@ from django.contrib.auth.models import User
 from django.db.models import Count, Q, Prefetch
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import openpyxl
@@ -652,177 +655,230 @@ def bulk_assign_guides(request):
 
 # ── Vista de importación ────────────────────────────────────────────────────
 
+def _process_sheet(ws, omitir_cr, actualizar):
+    """Procesa una hoja de Excel y retorna el resultado de la importación."""
+    headers = {}
+    header_row_idx = None
+    for row in ws.iter_rows():
+        if any(c.value for c in row):
+            for c in row:
+                if c.value and _norm_col(str(c.value)) not in headers:
+                    headers[_norm_col(str(c.value))] = c.column - 1
+            header_row_idx = c.row
+            break
+
+    if not headers:
+        return None, 'La hoja seleccionada está vacía o no tiene encabezados.'
+
+    col = {
+        'guia':        _find_col(headers, ['GUIA', 'GUIA_DE_DESPACHO', 'N_GUIA']),
+        'nv':          _find_col(headers, ['NV']),
+        'creacion':    _find_col(headers, ['CREACION', 'FECHA_CREACION']),
+        'fecha_envio': _find_col(headers, ['FENVIO', 'F_ENVIO', 'FECHA_ENVIO', 'ENVIO']),
+        'rut_cliente': _find_col(headers, ['RUT_CLIENTE', 'RUTCLIENTE', 'RUT']),
+        'referencia':  _find_col(headers, ['REFERENCIA']),
+        'creado_por':  _find_col(headers, ['CREADO_POR', 'CREADOPOR', 'VENDEDOR']),
+        'transporte':  _find_col(headers, ['TRANSPORTE']),
+        'despacho':    _find_col(headers, ['DESPACHO', 'FECHA_DESPACHO']),
+    }
+
+    creadas = actualizadas = omitidas_cr = 0
+    errores = []
+
+    for row_num, row in enumerate(
+        ws.iter_rows(min_row=header_row_idx + 1, values_only=True),
+        start=header_row_idx + 1
+    ):
+        if not any(v for v in row if v is not None):
+            continue
+
+        def get(key, r=row):
+            idx = col.get(key)
+            if idx is None or idx >= len(r):
+                return None
+            v = r[idx]
+            return v.strip() if isinstance(v, str) else (v if v not in ('', None) else None)
+
+        referencia = str(get('referencia') or '')
+        if omitir_cr and 'cliente retira' in referencia.lower():
+            omitidas_cr += 1
+            continue
+
+        numero_guia = get('guia')
+        rut_raw = get('rut_cliente')
+
+        if not numero_guia:
+            errores.append({'fila': row_num, 'guia': '—', 'motivo': 'Número de guía vacío'})
+            continue
+        numero_guia = str(numero_guia).strip()
+
+        if not rut_raw:
+            errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': 'RUT cliente vacío'})
+            continue
+
+        try:
+            cliente = Client.objects.get(rut=str(rut_raw).strip())
+        except Client.DoesNotExist:
+            errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': f'RUT {rut_raw} no existe en el sistema'})
+            continue
+
+        nv          = str(get('nv') or '').strip() or None
+        nv_fecha    = _parse_date(get('creacion'))
+        fecha_envio = _parse_date(get('fecha_envio'))
+        fecha_desp  = _parse_date(get('despacho'))
+
+        creado_por_raw = str(get('creado_por') or '').strip()
+        vendedor_obj = vendedor_nombre = None
+        if creado_por_raw:
+            vendedor_obj = Seller.objects.filter(nombre__icontains=creado_por_raw).first()
+            if not vendedor_obj:
+                vendedor_nombre = creado_por_raw
+
+        transporte_raw = str(get('transporte') or '').strip()
+        transportista = None
+        if transporte_raw:
+            transportista = User.objects.filter(groups__name='Transportista').filter(
+                Q(first_name__icontains=transporte_raw) |
+                Q(last_name__icontains=transporte_raw) |
+                Q(username__icontains=transporte_raw)
+            ).first()
+
+        existing = DispatchGuide.objects.filter(numero_guia=numero_guia).first()
+        if existing:
+            if actualizar:
+                if nv:           existing.nv = nv
+                if nv_fecha:     existing.nv_fecha_creacion = nv_fecha
+                if fecha_envio:  existing.fecha_envio = fecha_envio
+                if fecha_desp:   existing.fecha_despacho = fecha_desp
+                if referencia:   existing.notas = referencia
+                if vendedor_obj: existing.vendedor = vendedor_obj
+                if vendedor_nombre: existing.vendedor_nombre = vendedor_nombre
+                if transportista:
+                    existing.transportista = transportista
+                    if existing.estado == 'emitida':
+                        existing.estado = 'asignada'
+                existing.save()
+                actualizadas += 1
+            continue
+
+        estado_inicial = 'asignada' if transportista else 'emitida'
+        guide = DispatchGuide.objects.create(
+            numero_guia=numero_guia,
+            nv=nv,
+            nv_fecha_creacion=nv_fecha,
+            cliente=cliente,
+            direccion_entrega=cliente.direccion_entrega_preferida or cliente.direccion_facturacion,
+            usa_direccion_facturacion=not bool(cliente.direccion_entrega_preferida),
+            vendedor=vendedor_obj,
+            vendedor_nombre=vendedor_nombre,
+            transportista=transportista,
+            fecha_envio=fecha_envio,
+            fecha_despacho=fecha_desp,
+            notas=referencia or None,
+            estado=estado_inicial,
+        )
+        GuideStage.objects.create(
+            guia=guide,
+            estado=estado_inicial,
+            observaciones='Importada desde Excel ERP'
+        )
+        creadas += 1
+
+    return {
+        'creadas': creadas,
+        'actualizadas': actualizadas,
+        'omitidas_cr': omitidas_cr,
+        'errores': errores,
+        'total': creadas + actualizadas + omitidas_cr + len(errores),
+    }, None
+
+
 @admin_or_coordinador_required
 def import_guides_excel(request):
+    form = ImportDispatchExcelForm()
     result = None
 
     if request.method == 'POST':
-        form = ImportDispatchExcelForm(request.POST, request.FILES)
-        if form.is_valid():
+        action = request.POST.get('action', 'upload')
+
+        # ── Paso 1: leer libros del archivo ─────────────────────────────
+        if action == 'upload':
+            form = ImportDispatchExcelForm(request.POST, request.FILES)
+            if 'archivo_excel' not in request.FILES:
+                messages.error(request, 'Selecciona un archivo Excel.')
+                return render(request, 'guides/import_guides.html', {'form': form})
+
             archivo = request.FILES['archivo_excel']
-            omitir_cr = form.cleaned_data.get('omitir_cliente_retira', True)
-            actualizar = form.cleaned_data.get('actualizar_existentes', False)
+            ext = os.path.splitext(archivo.name)[1].lower()
 
             try:
-                wb = openpyxl.load_workbook(archivo, data_only=True)
-                ws = wb.active
+                with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                    for chunk in archivo.chunks():
+                        tmp.write(chunk)
+                    tmp_path = tmp.name
+
+                wb = openpyxl.load_workbook(tmp_path, read_only=True, data_only=True)
+                sheets = wb.sheetnames
+                wb.close()
+
+                request.session['excel_tmp_path'] = tmp_path
+                request.session['excel_opts'] = {
+                    'omitir_cr': request.POST.get('omitir_cliente_retira') == 'on',
+                    'actualizar': request.POST.get('actualizar_existentes') == 'on',
+                }
+
+                return render(request, 'guides/import_guides.html', {
+                    'form': form,
+                    'step': 'select_sheet',
+                    'sheets': sheets,
+                })
             except Exception as e:
+                if 'tmp_path' in locals() and os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
                 messages.error(request, f'No se pudo leer el archivo: {e}')
-                return render(request, 'guides/import_guides.html', {'form': form})
 
-            # Detectar fila de encabezados (primera fila con contenido)
-            headers = {}
-            header_row_idx = None
-            for row in ws.iter_rows():
-                if any(c.value for c in row):
-                    for cell in row:
-                        if cell.value and _norm_col(str(cell.value)) not in headers:
-                            headers[_norm_col(str(cell.value))] = cell.column - 1
-                    header_row_idx = cell.row
-                    break
+        # ── Paso 2: importar la hoja seleccionada ───────────────────────
+        elif action == 'import':
+            tmp_path = request.session.pop('excel_tmp_path', None)
+            opts = request.session.pop('excel_opts', {})
+            hoja = request.POST.get('hoja', '')
 
-            if not headers:
-                messages.error(request, 'El archivo está vacío o no tiene encabezados.')
-                return render(request, 'guides/import_guides.html', {'form': form})
+            if not tmp_path or not os.path.exists(tmp_path):
+                messages.error(request, 'La sesión expiró. Sube el archivo nuevamente.')
+                return redirect('import_guides_excel')
 
-            col = {
-                'guia':         _find_col(headers, ['GUIA', 'GUIA_DE_DESPACHO', 'N_GUIA']),
-                'nv':           _find_col(headers, ['NV']),
-                'creacion':     _find_col(headers, ['CREACION', 'FECHA_CREACION']),
-                'fecha_envio':  _find_col(headers, ['FENVIO', 'F_ENVIO', 'FECHA_ENVIO', 'ENVIO']),
-                'rut_cliente':  _find_col(headers, ['RUT_CLIENTE', 'RUTCLIENTE', 'RUT']),
-                'referencia':   _find_col(headers, ['REFERENCIA']),
-                'creado_por':   _find_col(headers, ['CREADO_POR', 'CREADOPOR', 'VENDEDOR']),
-                'cliente':      _find_col(headers, ['CLIENTE']),
-                'transporte':   _find_col(headers, ['TRANSPORTE']),
-                'despacho':     _find_col(headers, ['DESPACHO', 'FECHA_DESPACHO']),
-            }
-
-            creadas = 0
-            actualizadas = 0
-            omitidas_cr = 0
-            errores = []
-
-            for row_num, row in enumerate(
-                ws.iter_rows(min_row=header_row_idx + 1, values_only=True),
-                start=header_row_idx + 1
-            ):
-                if not any(v for v in row if v is not None):
-                    continue
-
-                def cell(key):
-                    idx = col.get(key)
-                    if idx is None or idx >= len(row):
-                        return None
-                    val = row[idx]
-                    if isinstance(val, str):
-                        val = val.strip()
-                    return val if val not in ('', None) else None
-
-                referencia = str(cell('referencia') or '')
-                if omitir_cr and 'cliente retira' in referencia.lower():
-                    omitidas_cr += 1
-                    continue
-
-                numero_guia = cell('guia')
-                rut_raw = cell('rut_cliente')
-
-                if not numero_guia:
-                    errores.append({'fila': row_num, 'guia': '—', 'motivo': 'Número de guía vacío'})
-                    continue
-                numero_guia = str(numero_guia).strip()
-
-                if not rut_raw:
-                    errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': 'RUT cliente vacío'})
-                    continue
-                rut = str(rut_raw).strip()
-
-                try:
-                    cliente = Client.objects.get(rut=rut)
-                except Client.DoesNotExist:
-                    errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': f'Cliente RUT {rut} no existe en el sistema'})
-                    continue
-
-                nv_fecha = _parse_date(cell('creacion'))
-                fecha_envio = _parse_date(cell('fecha_envio'))
-                fecha_despacho = _parse_date(cell('despacho'))
-                nv = str(cell('nv') or '').strip() or None
-
-                # Vendedor
-                creado_por_raw = str(cell('creado_por') or '').strip()
-                vendedor_obj = None
-                vendedor_nombre = None
-                if creado_por_raw:
-                    vendedor_obj = Seller.objects.filter(nombre__icontains=creado_por_raw).first()
-                    if not vendedor_obj:
-                        vendedor_nombre = creado_por_raw
-
-                # Transportista
-                transporte_raw = str(cell('transporte') or '').strip()
-                transportista = None
-                if transporte_raw:
-                    transportista = User.objects.filter(
-                        groups__name='Transportista'
-                    ).filter(
-                        Q(first_name__icontains=transporte_raw) |
-                        Q(last_name__icontains=transporte_raw) |
-                        Q(username__icontains=transporte_raw)
-                    ).first()
-
-                # ¿Ya existe?
-                existing = DispatchGuide.objects.filter(numero_guia=numero_guia).first()
-                if existing:
-                    if actualizar:
-                        if nv:              existing.nv = nv
-                        if nv_fecha:        existing.nv_fecha_creacion = nv_fecha
-                        if fecha_envio:     existing.fecha_envio = fecha_envio
-                        if fecha_despacho:  existing.fecha_despacho = fecha_despacho
-                        if referencia:      existing.notas = referencia
-                        if vendedor_obj:    existing.vendedor = vendedor_obj
-                        if vendedor_nombre: existing.vendedor_nombre = vendedor_nombre
-                        if transportista and existing.estado == 'emitida':
-                            existing.transportista = transportista
-                            existing.estado = 'asignada'
-                        elif transportista:
-                            existing.transportista = transportista
-                        existing.save()
-                        actualizadas += 1
-                    continue
-
-                # Crear guía nueva
-                estado_inicial = 'asignada' if transportista else 'emitida'
-                direccion = cliente.direccion_entrega_preferida or cliente.direccion_facturacion
-
-                guide = DispatchGuide.objects.create(
-                    numero_guia=numero_guia,
-                    nv=nv,
-                    nv_fecha_creacion=nv_fecha,
-                    cliente=cliente,
-                    direccion_entrega=direccion,
-                    usa_direccion_facturacion=not bool(cliente.direccion_entrega_preferida),
-                    vendedor=vendedor_obj,
-                    vendedor_nombre=vendedor_nombre,
-                    transportista=transportista,
-                    fecha_envio=fecha_envio,
-                    fecha_despacho=fecha_despacho,
-                    notas=referencia or None,
-                    estado=estado_inicial,
-                )
-                GuideStage.objects.create(
-                    guia=guide,
-                    estado=estado_inicial,
-                    observaciones='Importada desde Excel ERP'
-                )
-                creadas += 1
-
-            result = {
-                'creadas': creadas,
-                'actualizadas': actualizadas,
-                'omitidas_cr': omitidas_cr,
-                'errores': errores,
-                'total': creadas + actualizadas + omitidas_cr + len(errores),
-            }
-    else:
-        form = ImportDispatchExcelForm()
+            try:
+                wb = openpyxl.load_workbook(tmp_path, data_only=True)
+                ws = wb[hoja] if hoja in wb.sheetnames else wb.active
+                result, error = _process_sheet(ws, opts.get('omitir_cr', True), opts.get('actualizar', False))
+                wb.close()
+                if error:
+                    messages.error(request, error)
+            except Exception as e:
+                messages.error(request, f'Error al procesar la hoja: {e}')
+            finally:
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
 
     return render(request, 'guides/import_guides.html', {'form': form, 'result': result})
+
+
+@admin_or_coordinador_required
+@require_POST
+def update_guide_address(request, guide_id):
+    guide = get_object_or_404(DispatchGuide, id=guide_id)
+    direccion = request.POST.get('direccion_entrega', '').strip()
+    map_link = request.POST.get('map_link', '').strip()
+
+    if not direccion:
+        return JsonResponse({'error': 'La dirección no puede estar vacía.'}, status=400)
+
+    guide.direccion_entrega = direccion
+    guide.map_link = map_link or None
+    guide.save()
+
+    return JsonResponse({
+        'success': True,
+        'direccion': direccion,
+        'map_link': map_link,
+    })
