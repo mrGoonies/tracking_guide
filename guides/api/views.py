@@ -84,7 +84,10 @@ class UpdateEstadoView(APIView):
 
         nuevo_estado  = request.data.get('estado', '').strip()
         observaciones = request.data.get('observaciones', '').strip()
-        fotos         = request.FILES.getlist('fotos')
+
+        # Fotos por categoría (solo para entregada/rechazada)
+        foto_guia      = request.FILES.get('foto_guia')
+        fotos_cliente  = request.FILES.getlist('fotos_cliente')
 
         # Validar estado
         if nuevo_estado not in ESTADOS_VALIDOS_TRANSPORTISTA:
@@ -101,12 +104,18 @@ class UpdateEstadoView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Foto obligatoria al entregar o rechazar
-        if nuevo_estado in ESTADOS_REQUIEREN_FOTO and not fotos:
-            return Response(
-                {'error': 'Se requiere al menos una foto al marcar como entregada o rechazada.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Validar fotos obligatorias por categoría
+        if nuevo_estado in ESTADOS_REQUIEREN_FOTO:
+            if not foto_guia:
+                return Response(
+                    {'error': 'La foto de la guía de despacho firmada es obligatoria.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not fotos_cliente:
+                return Response(
+                    {'error': 'Se requiere al menos una foto del cliente recepcionando los productos.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         # Crear etapa
         etapa = GuideStage.objects.create(
@@ -115,9 +124,13 @@ class UpdateEstadoView(APIView):
             observaciones=observaciones or None,
         )
 
-        # Guardar fotos
-        for i, foto in enumerate(fotos):
-            GuideStagePhoto.objects.create(etapa=etapa, foto=foto, orden=i)
+        # Guardar foto de guía (solo una)
+        if foto_guia:
+            GuideStagePhoto.objects.create(etapa=etapa, foto=foto_guia, orden=0, categoria='guia')
+
+        # Guardar fotos del cliente (múltiples)
+        for i, foto in enumerate(fotos_cliente):
+            GuideStagePhoto.objects.create(etapa=etapa, foto=foto, orden=i, categoria='cliente')
 
         # Actualizar guía
         guide.estado = nuevo_estado
