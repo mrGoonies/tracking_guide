@@ -115,5 +115,10 @@ class DispatchGuideDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_proximos_estados(self, obj):
-        """Devuelve los estados a los que puede transicionar esta guía."""
-        return NEXT_STATE_MAP.get(obj.estado, [])
+        """Devuelve los estados válidos para el usuario actual.
+        Transportistas no pueden cerrar guías."""
+        estados = list(NEXT_STATE_MAP.get(obj.estado, []))
+        request = self.context.get('request')
+        if request and request.user.groups.filter(name='Transportista').exists():
+            estados = [e for e in estados if e != 'cerrada']
+        return estados

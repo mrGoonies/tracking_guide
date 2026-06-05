@@ -14,7 +14,8 @@ from .serializers import (
 )
 
 ESTADOS_REQUIEREN_FOTO = ('entregada', 'rechazada')
-ESTADOS_VALIDOS_TRANSPORTISTA = {'asignada', 'en_ruta', 'entregada', 'rechazada', 'cerrada'}
+# Transportistas no pueden cerrar guías — solo admin/coordinador desde la web
+ESTADOS_VALIDOS_TRANSPORTISTA = {'asignada', 'en_ruta', 'entregada', 'rechazada'}
 
 
 # ── Auth ─────────────────────────────────────────────────────────────────────

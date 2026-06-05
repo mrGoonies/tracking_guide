@@ -340,6 +340,10 @@ def guide_detail(request, guide_id):
         'cerrada': [],
     }
     next_states = next_state_map.get(guide.estado, [])
+
+    # Transportistas no pueden cerrar guías
+    if is_transportista(request.user):
+        next_states = [(s, l) for s, l in next_states if s != 'cerrada']
     
     if request.method == 'POST':
         form = UpdateGuideStateForm(request.POST, request.FILES)
