@@ -23,7 +23,7 @@ class GuideStagePhotoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GuideStagePhoto
-        fields = ['id', 'url', 'orden']
+        fields = ['id', 'url', 'orden', 'categoria']
 
     def get_url(self, obj):
         request = self.context.get('request')
