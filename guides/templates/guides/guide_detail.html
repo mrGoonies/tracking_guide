@@ -42,7 +42,7 @@
         .topbar-back:hover { background: rgba(255,255,255,0.22); }
 
         .topbar-title { font-size: 16px; font-weight: 700; color: #fff; }
-        .topbar-brand { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+        .topbar-brand { height: 28px; width: auto; background: #fff; padding: 3px 8px; border-radius: 5px; }
 
         /* Status pill in topbar */
         .topbar-status {
@@ -358,7 +358,7 @@
             <span class="topbar-title">Guía #{{ guide.numero_guia }}</span>
             <span class="topbar-status">{{ guide.get_estado_display }}</span>
         </div>
-        <span class="topbar-brand">irritec</span>
+        <img src="{% static 'guides/images/logo.webp' %}" alt="Irritec" class="topbar-brand">
     </div>
 
     <div class="main">

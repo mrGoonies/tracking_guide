@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -39,7 +40,7 @@
             margin-bottom: 14px;
         }
 
-        .brand { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+        .brand { height: 26px; width: auto; background: #fff; padding: 3px 8px; border-radius: 5px; }
 
         .user-info { text-align: right; }
 
@@ -261,7 +262,7 @@
 
     <div class="header">
         <div class="header-top">
-            <span class="brand">irritec</span>
+            <img src="{% static 'guides/images/logo.webp' %}" alt="Irritec" class="brand">
             <div style="display:flex; align-items:center;">
                 <div class="user-info">
                     <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>

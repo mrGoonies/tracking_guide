@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -34,37 +35,12 @@
             text-align: center;
         }
 
-        .brand-logo {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 6px;
-        }
-
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-        }
-
-        .brand-name {
-            font-size: 26px;
-            font-weight: 800;
-            color: #fff;
-            letter-spacing: -0.5px;
-        }
-
-        .brand-tagline {
-            font-size: 12px;
-            color: rgba(255,255,255,0.75);
-            font-style: italic;
-            letter-spacing: 0.3px;
+        .brand-logo-img {
+            height: 60px;
+            width: auto;
+            background: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
         }
 
         /* Form area */
@@ -169,11 +145,7 @@
         <div class="card">
 
             <div class="brand">
-                <div class="brand-logo">
-                    <div class="brand-icon">🌿</div>
-                    <span class="brand-name">irritec</span>
-                </div>
-                <div class="brand-tagline">don't wait for rain</div>
+                <img src="{% static 'guides/images/logo.webp' %}" alt="Irritec" class="brand-logo-img">
             </div>
 
             <div class="form-area">

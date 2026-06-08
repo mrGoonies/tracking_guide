@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -31,11 +32,12 @@
             text-decoration: none;
         }
 
-        .topbar-brand-name {
-            font-size: 18px;
-            font-weight: 800;
-            color: #fff;
-            letter-spacing: -0.3px;
+        .topbar-brand-logo {
+            height: 28px;
+            width: auto;
+            background: #fff;
+            padding: 3px 8px;
+            border-radius: 5px;
         }
 
         .topbar-brand-sep {
@@ -232,7 +234,7 @@
 
     <div class="topbar">
         <a href="{% url 'hub' %}" class="topbar-brand">
-            <span class="topbar-brand-name">irritec</span>
+            <img src="{% static 'guides/images/logo.webp' %}" alt="Irritec" class="topbar-brand-logo">
             <span class="topbar-brand-sep">|</span>
             <span class="topbar-brand-sub">Guías de Despacho</span>
         </a>

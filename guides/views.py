@@ -638,14 +638,17 @@ def bulk_assign_guides(request):
         if ids:
             guias_a_asignar = DispatchGuide.objects.filter(id__in=ids)
             for guide in guias_a_asignar:
+                era_emitida = guide.estado == 'emitida'
                 guide.transportista = transportista_sel
-                guide.estado = 'asignada'
+                if era_emitida:
+                    guide.estado = 'asignada'
                 guide.save()
-                GuideStage.objects.create(
-                    guia=guide,
-                    estado='asignada',
-                    observaciones=f'Asignada a {transportista_sel.get_full_name() or transportista_sel.username}'
-                )
+                if era_emitida:
+                    GuideStage.objects.create(
+                        guia=guide,
+                        estado='asignada',
+                        observaciones=f'Asignada a {transportista_sel.get_full_name() or transportista_sel.username}'
+                    )
             messages.success(request, f'✓ {len(ids)} guía(s) asignadas a {transportista_sel.get_full_name() or transportista_sel.username}.')
             return redirect(f'{request.path}?transportista={transportista_sel.id}')
 
