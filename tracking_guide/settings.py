@@ -103,36 +103,30 @@ USE_I18N = True
 USE_TZ = True
 
 # ──────────────────────────────────────────────
-# Static files (WhiteNoise)
+# Static & Media files
 # ──────────────────────────────────────────────
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# ──────────────────────────────────────────────
-# Media files
-# En produccion se usa Cloudinary; en desarrollo el sistema de archivos local.
-# ──────────────────────────────────────────────
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Parsear CLOUDINARY_URL = cloudinary://api_key:api_secret@cloud_name
-_cloudinary_url = os.environ.get('CLOUDINARY_URL', '')
-if _cloudinary_url:
-    from urllib.parse import urlparse as _urlparse
-    _parsed = _urlparse(_cloudinary_url)
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': _parsed.hostname or '',
-        'API_KEY':    _parsed.username or '',
-        'API_SECRET': _parsed.password or '',
-    }
-else:
-    CLOUDINARY_STORAGE = {}
+# CLOUDINARY_URL es leída automáticamente por la librería cloudinary.
+# No se necesita parseo manual; django-cloudinary-storage la consume directamente.
+CLOUDINARY_STORAGE = {}
 
-if DEBUG:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-else:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+STORAGES = {
+    'default': {
+        'BACKEND': (
+            'django.core.files.storage.FileSystemStorage'
+            if DEBUG else
+            'cloudinary_storage.storage.MediaCloudinaryStorage'
+        ),
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # ──────────────────────────────────────────────
 # Authentication
