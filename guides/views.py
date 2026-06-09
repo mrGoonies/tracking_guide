@@ -809,6 +809,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
             estado=estado_inicial,
         ))
         estados_nuevas.append(estado_inicial)
+        guias_existentes.add(numero_guia)  # evita duplicados dentro del mismo archivo Excel
 
         # Flush parcial: evita acumular cientos de objetos en RAM
         if len(guides_nuevas) >= FLUSH_EVERY:
