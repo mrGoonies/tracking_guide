@@ -27,6 +27,15 @@ CSRF_TRUSTED_ORIGINS = [
     if o.strip()
 ]
 
+# Render (y cualquier reverse proxy) termina TLS antes de llegar a Gunicorn.
+# Sin esto request.is_secure() devuelve False → Django construye URLs http://
+# para validar Origin/Referer → CSRF 403.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Cookies solo viajan por HTTPS en producción.
+CSRF_COOKIE_SECURE    = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+
 # ──────────────────────────────────────────────
 # Application
 # ──────────────────────────────────────────────
