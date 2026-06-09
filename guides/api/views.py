@@ -151,12 +151,21 @@ class UpdateEstadoView(APIView):
                 return Response({'error': 'Error al guardar una foto del cliente. Intenta nuevamente.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Actualizar guía
-        guide.estado = nuevo_estado
-        if nuevo_estado in ESTADOS_REQUIEREN_FOTO and not guide.fecha_envio:
-            guide.fecha_envio = timezone.localdate()
-        guide.save()
+        try:
+            guide.estado = nuevo_estado
+            if nuevo_estado in ESTADOS_REQUIEREN_FOTO and not guide.fecha_envio:
+                guide.fecha_envio = timezone.localdate()
+            guide.save()
+        except Exception as exc:
+            logger.error('[UpdateEstado] Error guardando guide.save() guia=%s: %s', pk, exc, exc_info=True)
+            etapa.delete()
+            return Response({'error': 'Error interno al actualizar el estado.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        serializer = DispatchGuideDetailSerializer(
-            guide, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            serializer = DispatchGuideDetailSerializer(
+                guide, context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as exc:
+            logger.error('[UpdateEstado] Error serializando respuesta guia=%s: %s', pk, exc, exc_info=True)
+            return Response({'estado': nuevo_estado, 'id': guide.id}, status=status.HTTP_200_OK)
