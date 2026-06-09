@@ -18,4 +18,6 @@ urlpatterns = [
     path('guias/importar-excel/', views.import_guides_excel, name='import_guides_excel'),
     path('guias/asignar/', views.bulk_assign_guides, name='bulk_assign_guides'),
     path('guias/<int:guide_id>/editar-direccion/', views.update_guide_address, name='update_guide_address'),
+    path('guias/<int:guide_id>/eliminar/', views.confirm_delete_guide, name='confirm_delete_guide'),
+    path('guias/<int:guide_id>/eliminar/confirmar/', views.delete_guide, name='delete_guide'),
 ]
