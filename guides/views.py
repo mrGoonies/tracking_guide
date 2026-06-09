@@ -663,43 +663,63 @@ def bulk_assign_guides(request):
 # ── Vista de importación ────────────────────────────────────────────────────
 
 def _process_sheet(ws, omitir_cr, actualizar):
-    """Procesa una hoja de Excel y retorna el resultado de la importación."""
-    headers = {}
-    header_row_idx = None
-    for row in ws.iter_rows():
-        if any(c.value for c in row):
-            for c in row:
-                if c.value and _norm_col(str(c.value)) not in headers:
-                    headers[_norm_col(str(c.value))] = c.column - 1
-            header_row_idx = c.row
-            break
+    """Procesa la hoja en un único paso (compatible con read_only=True).
+    Pre-carga lookups en memoria para evitar N+1 queries.
+    Usa bulk_create/bulk_update para inserciones y actualizaciones masivas."""
 
-    if not headers:
-        return None, 'La hoja seleccionada está vacía o no tiene encabezados.'
-
-    col = {
-        'guia':        _find_col(headers, ['GUIA', 'GUIA_DE_DESPACHO', 'N_GUIA']),
-        'nv':          _find_col(headers, ['NV']),
-        'creacion':    _find_col(headers, ['CREACION', 'FECHA_CREACION']),
-        'fecha_envio': _find_col(headers, ['FENVIO', 'F_ENVIO', 'FECHA_ENVIO', 'ENVIO']),
-        'rut_cliente': _find_col(headers, ['RUT_CLIENTE', 'RUTCLIENTE', 'RUT']),
-        'referencia':  _find_col(headers, ['REFERENCIA']),
-        'creado_por':  _find_col(headers, ['CREADO_POR', 'CREADOPOR', 'VENDEDOR']),
-        'transporte':  _find_col(headers, ['TRANSPORTE']),
-        'despacho':    _find_col(headers, ['DESPACHO', 'FECHA_DESPACHO']),
+    # ── Pre-cargar tablas de referencia (una query por tabla) ────────────
+    clientes_map = {
+        c.rut: c
+        for c in Client.objects.only('id', 'rut', 'direccion_facturacion', 'direccion_entrega_preferida')
     }
+    vendedores_map = {
+        v.nombre.lower(): v
+        for v in Seller.objects.filter(activo=True).only('id', 'nombre')
+    }
+    transportistas_list = list(
+        User.objects.filter(groups__name='Transportista')
+                    .only('id', 'first_name', 'last_name', 'username')
+    )
+    guias_existentes = set(DispatchGuide.objects.values_list('numero_guia', flat=True))
+
+    # ── Única pasada sobre la hoja ───────────────────────────────────────
+    col = {}
+    header_found = False
+    row_num = 0
 
     creadas = actualizadas = omitidas_cr = 0
     errores = []
+    guides_nuevas  = []   # objetos DispatchGuide para bulk_create
+    estados_nuevas = []   # estado inicial de cada guía nueva (mismo orden)
+    updates_pendientes = {}  # {numero_guia: {campo: valor}}
 
-    for row_num, row in enumerate(
-        ws.iter_rows(min_row=header_row_idx + 1, values_only=True),
-        start=header_row_idx + 1
-    ):
-        if not any(v for v in row if v is not None):
+    for raw_row in ws.iter_rows(values_only=True):
+        row_num += 1
+
+        if not any(v for v in raw_row if v is not None):
             continue
 
-        def get(key, r=row):
+        # Primera fila con datos → encabezados
+        if not header_found:
+            headers = {}
+            for idx, v in enumerate(raw_row):
+                if v:
+                    headers[_norm_col(str(v))] = idx
+            col = {
+                'guia':        _find_col(headers, ['GUIA', 'GUIA_DE_DESPACHO', 'N_GUIA']),
+                'nv':          _find_col(headers, ['NV']),
+                'creacion':    _find_col(headers, ['CREACION', 'FECHA_CREACION']),
+                'fecha_envio': _find_col(headers, ['FENVIO', 'F_ENVIO', 'FECHA_ENVIO', 'ENVIO']),
+                'rut_cliente': _find_col(headers, ['RUT_CLIENTE', 'RUTCLIENTE', 'RUT']),
+                'referencia':  _find_col(headers, ['REFERENCIA']),
+                'creado_por':  _find_col(headers, ['CREADO_POR', 'CREADOPOR', 'VENDEDOR']),
+                'transporte':  _find_col(headers, ['TRANSPORTE']),
+                'despacho':    _find_col(headers, ['DESPACHO', 'FECHA_DESPACHO']),
+            }
+            header_found = True
+            continue
+
+        def get(key, r=raw_row):
             idx = col.get(key)
             if idx is None or idx >= len(r):
                 return None
@@ -712,7 +732,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
             continue
 
         numero_guia = get('guia')
-        rut_raw = get('rut_cliente')
+        rut_raw     = get('rut_cliente')
 
         if not numero_guia:
             errores.append({'fila': row_num, 'guia': '—', 'motivo': 'Número de guía vacío'})
@@ -723,9 +743,8 @@ def _process_sheet(ws, omitir_cr, actualizar):
             errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': 'RUT cliente vacío'})
             continue
 
-        try:
-            cliente = Client.objects.get(rut=str(rut_raw).strip())
-        except Client.DoesNotExist:
+        cliente = clientes_map.get(str(rut_raw).strip())
+        if not cliente:
             errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': f'RUT {rut_raw} no existe en el sistema'})
             continue
 
@@ -737,39 +756,42 @@ def _process_sheet(ws, omitir_cr, actualizar):
         creado_por_raw = str(get('creado_por') or '').strip()
         vendedor_obj = vendedor_nombre = None
         if creado_por_raw:
-            vendedor_obj = Seller.objects.filter(nombre__icontains=creado_por_raw).first()
+            raw_lower = creado_por_raw.lower()
+            for nombre_lower, v in vendedores_map.items():
+                if raw_lower in nombre_lower or nombre_lower in raw_lower:
+                    vendedor_obj = v
+                    break
             if not vendedor_obj:
                 vendedor_nombre = creado_por_raw
 
-        transporte_raw = str(get('transporte') or '').strip()
+        transporte_raw = str(get('transporte') or '').strip().lower()
         transportista = None
         if transporte_raw:
-            transportista = User.objects.filter(groups__name='Transportista').filter(
-                Q(first_name__icontains=transporte_raw) |
-                Q(last_name__icontains=transporte_raw) |
-                Q(username__icontains=transporte_raw)
-            ).first()
+            for t in transportistas_list:
+                if (transporte_raw in (t.first_name or '').lower() or
+                        transporte_raw in (t.last_name or '').lower() or
+                        transporte_raw in t.username.lower()):
+                    transportista = t
+                    break
 
-        existing = DispatchGuide.objects.filter(numero_guia=numero_guia).first()
-        if existing:
+        # ── Guía existente ───────────────────────────────────────────────
+        if numero_guia in guias_existentes:
             if actualizar:
-                if nv:           existing.nv = nv
-                if nv_fecha:     existing.nv_fecha_creacion = nv_fecha
-                if fecha_envio:  existing.fecha_envio = fecha_envio
-                if fecha_desp:   existing.fecha_despacho = fecha_desp
-                if referencia:   existing.notas = referencia
-                if vendedor_obj: existing.vendedor = vendedor_obj
-                if vendedor_nombre: existing.vendedor_nombre = vendedor_nombre
-                if transportista:
-                    existing.transportista = transportista
-                    if existing.estado == 'emitida':
-                        existing.estado = 'asignada'
-                existing.save()
-                actualizadas += 1
+                updates_pendientes[numero_guia] = {
+                    'nv': nv,
+                    'nv_fecha_creacion': nv_fecha,
+                    'fecha_envio': fecha_envio,
+                    'fecha_despacho': fecha_desp,
+                    'notas': referencia or None,
+                    'vendedor': vendedor_obj,
+                    'vendedor_nombre': vendedor_nombre,
+                    'transportista': transportista,
+                }
             continue
 
+        # ── Guía nueva ───────────────────────────────────────────────────
         estado_inicial = 'asignada' if transportista else 'emitida'
-        guide = DispatchGuide.objects.create(
+        guides_nuevas.append(DispatchGuide(
             numero_guia=numero_guia,
             nv=nv,
             nv_fecha_creacion=nv_fecha,
@@ -783,13 +805,41 @@ def _process_sheet(ws, omitir_cr, actualizar):
             fecha_despacho=fecha_desp,
             notas=referencia or None,
             estado=estado_inicial,
-        )
-        GuideStage.objects.create(
-            guia=guide,
-            estado=estado_inicial,
-            observaciones='Importada desde Excel ERP'
-        )
-        creadas += 1
+        ))
+        estados_nuevas.append(estado_inicial)
+
+    if not header_found:
+        return None, 'La hoja seleccionada está vacía o no tiene encabezados.'
+
+    # ── Bulk create guías nuevas + sus etapas iniciales ──────────────────
+    if guides_nuevas:
+        created = DispatchGuide.objects.bulk_create(guides_nuevas, batch_size=200)
+        GuideStage.objects.bulk_create([
+            GuideStage(guia=g, estado=s, observaciones='Importada desde Excel ERP')
+            for g, s in zip(created, estados_nuevas)
+        ], batch_size=200)
+        creadas = len(created)
+
+    # ── Bulk update guías existentes ─────────────────────────────────────
+    if updates_pendientes:
+        guias_qs = list(DispatchGuide.objects.filter(numero_guia__in=updates_pendientes.keys()))
+        changed_fields = set()
+        for guide in guias_qs:
+            data = updates_pendientes[guide.numero_guia]
+            for field in ('nv', 'nv_fecha_creacion', 'fecha_envio', 'fecha_despacho',
+                          'notas', 'vendedor', 'vendedor_nombre'):
+                if data.get(field):
+                    setattr(guide, field, data[field])
+                    changed_fields.add(field)
+            if data.get('transportista'):
+                guide.transportista = data['transportista']
+                changed_fields.add('transportista')
+                if guide.estado == 'emitida':
+                    guide.estado = 'asignada'
+                    changed_fields.add('estado')
+        if changed_fields:
+            DispatchGuide.objects.bulk_update(guias_qs, fields=list(changed_fields), batch_size=200)
+        actualizadas = len(guias_qs)
 
     return {
         'creadas': creadas,
@@ -855,7 +905,7 @@ def import_guides_excel(request):
                 return redirect('import_guides_excel')
 
             try:
-                wb = openpyxl.load_workbook(tmp_path, data_only=True)
+                wb = openpyxl.load_workbook(tmp_path, read_only=True, data_only=True)
                 ws = wb[hoja] if hoja in wb.sheetnames else wb.active
                 result, error = _process_sheet(ws, opts.get('omitir_cr', True), opts.get('actualizar', False))
                 wb.close()
