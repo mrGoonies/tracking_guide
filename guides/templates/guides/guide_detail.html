@@ -438,6 +438,20 @@
             </div>
         </div>
 
+        <!-- Eliminar guía (solo admin) -->
+        {% if request.user.is_staff %}
+        <div style="text-align:right; margin-bottom:12px;">
+            <a href="{% url 'confirm_delete_guide' guide.id %}"
+               style="display:inline-block; padding:8px 18px; background:#fde8e8; color:#b91c1c;
+                      border-radius:8px; font-size:13px; font-weight:700; text-decoration:none;
+                      border:1px solid #fecaca; transition:background 0.2s;"
+               onmouseover="this.style.background='#fecaca'"
+               onmouseout="this.style.background='#fde8e8'">
+                Eliminar guía
+            </a>
+        </div>
+        {% endif %}
+
         <!-- Actualizar estado -->
         {% if next_states %}
         <div class="section">
