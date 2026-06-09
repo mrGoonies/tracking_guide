@@ -1,5 +1,17 @@
+import os
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
+
+
+def _guide_photo_path(instance, filename):
+    """Genera un path corto con UUID para evitar exceder max_length del campo foto."""
+    ext = os.path.splitext(filename)[1].lower() or '.jpg'
+    short_name = f"{uuid.uuid4().hex[:16]}{ext}"
+    from django.utils import timezone
+    now = timezone.now()
+    return f"tracking/guide_photos/{now.year}/{now.month:02d}/{now.day:02d}/{short_name}"
 
 class Client(models.Model):
     """Modelo para almacenar información de clientes."""
@@ -91,7 +103,7 @@ class GuideStage(models.Model):
     guia = models.ForeignKey(DispatchGuide, on_delete=models.CASCADE, related_name='etapas')
     estado = models.CharField(max_length=20, choices=STATUS_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
-    foto = models.ImageField(upload_to='tracking/guide_photos/%Y/%m/%d/', blank=True, null=True)
+    foto = models.ImageField(upload_to=_guide_photo_path, max_length=500, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -112,7 +124,7 @@ class GuideStagePhoto(models.Model):
     ]
 
     etapa     = models.ForeignKey(GuideStage, on_delete=models.CASCADE, related_name='fotos')
-    foto      = models.ImageField(upload_to='tracking/guide_photos/%Y/%m/%d/')
+    foto      = models.ImageField(upload_to=_guide_photo_path, max_length=500)
     orden     = models.PositiveSmallIntegerField(default=0)
     categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='general')
 
