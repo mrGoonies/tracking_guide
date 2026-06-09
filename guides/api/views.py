@@ -1,9 +1,13 @@
+import logging
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+logger = logging.getLogger(__name__)
 
 from guides.models import DispatchGuide, GuideStage, GuideStagePhoto
 from .permissions import IsTransportista
@@ -118,19 +122,33 @@ class UpdateEstadoView(APIView):
                 )
 
         # Crear etapa
-        etapa = GuideStage.objects.create(
-            guia=guide,
-            estado=nuevo_estado,
-            observaciones=observaciones or None,
-        )
+        try:
+            etapa = GuideStage.objects.create(
+                guia=guide,
+                estado=nuevo_estado,
+                observaciones=observaciones or None,
+            )
+        except Exception as exc:
+            logger.error('[UpdateEstado] Error creando GuideStage guia=%s: %s', pk, exc, exc_info=True)
+            return Response({'error': 'Error interno al registrar la etapa.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Guardar foto de guía (solo una)
         if foto_guia:
-            GuideStagePhoto.objects.create(etapa=etapa, foto=foto_guia, orden=0, categoria='guia')
+            try:
+                GuideStagePhoto.objects.create(etapa=etapa, foto=foto_guia, orden=0, categoria='guia')
+            except Exception as exc:
+                logger.error('[UpdateEstado] Error guardando foto_guia guia=%s: %s', pk, exc, exc_info=True)
+                etapa.delete()
+                return Response({'error': 'Error al guardar la foto de la guía. Intenta nuevamente.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Guardar fotos del cliente (múltiples)
         for i, foto in enumerate(fotos_cliente):
-            GuideStagePhoto.objects.create(etapa=etapa, foto=foto, orden=i, categoria='cliente')
+            try:
+                GuideStagePhoto.objects.create(etapa=etapa, foto=foto, orden=i, categoria='cliente')
+            except Exception as exc:
+                logger.error('[UpdateEstado] Error guardando foto_cliente[%d] guia=%s: %s', i, pk, exc, exc_info=True)
+                etapa.delete()
+                return Response({'error': 'Error al guardar una foto del cliente. Intenta nuevamente.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Actualizar guía
         guide.estado = nuevo_estado

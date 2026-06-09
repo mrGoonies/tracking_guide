@@ -1,4 +1,5 @@
 import csv
+import gc
 import io
 import os
 import tempfile
@@ -683,6 +684,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
     guias_existentes = set(DispatchGuide.objects.values_list('numero_guia', flat=True))
 
     # ── Única pasada sobre la hoja ───────────────────────────────────────
+    FLUSH_EVERY = 100   # flush a BD cada N guías nuevas para limitar memoria pico
     col = {}
     header_found = False
     row_num = 0
@@ -808,12 +810,23 @@ def _process_sheet(ws, omitir_cr, actualizar):
         ))
         estados_nuevas.append(estado_inicial)
 
+        # Flush parcial: evita acumular cientos de objetos en RAM
+        if len(guides_nuevas) >= FLUSH_EVERY:
+            batch = DispatchGuide.objects.bulk_create(guides_nuevas, batch_size=FLUSH_EVERY)
+            GuideStage.objects.bulk_create([
+                GuideStage(guia=g, estado=s, observaciones='Importada desde Excel ERP')
+                for g, s in zip(batch, estados_nuevas)
+            ], batch_size=FLUSH_EVERY)
+            creadas += len(batch)
+            guides_nuevas.clear()
+            estados_nuevas.clear()
+
     if not header_found:
         return None, 'La hoja seleccionada está vacía o no tiene encabezados.'
 
-    # ── Bulk create guías nuevas + sus etapas iniciales ──────────────────
+    # ── Bulk create del resto de guías nuevas (último batch) ─────────────
     if guides_nuevas:
-        created = DispatchGuide.objects.bulk_create(guides_nuevas, batch_size=200)
+        created = DispatchGuide.objects.bulk_create(guides_nuevas, batch_size=FLUSH_EVERY)
         GuideStage.objects.bulk_create([
             GuideStage(guia=g, estado=s, observaciones='Importada desde Excel ERP')
             for g, s in zip(created, estados_nuevas)
@@ -868,6 +881,10 @@ def import_guides_excel(request):
             archivo = request.FILES['archivo_excel']
             ext = os.path.splitext(archivo.name)[1].lower()
 
+            if archivo.size > 10 * 1024 * 1024:
+                messages.error(request, 'El archivo supera el límite de 10 MB. Divídelo en partes más pequeñas.')
+                return render(request, 'guides/import_guides.html', {'form': form})
+
             try:
                 with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
                     for chunk in archivo.chunks():
@@ -909,6 +926,7 @@ def import_guides_excel(request):
                 ws = wb[hoja] if hoja in wb.sheetnames else wb.active
                 result, error = _process_sheet(ws, opts.get('omitir_cr', True), opts.get('actualizar', False))
                 wb.close()
+                gc.collect()  # liberar memoria de los lookups y objetos post-importación
                 if error:
                     messages.error(request, error)
             except Exception as e:
