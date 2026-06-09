@@ -958,3 +958,50 @@ def update_guide_address(request, guide_id):
         'direccion': direccion,
         'map_link': map_link,
     })
+
+
+@admin_required
+@require_POST
+def delete_guide(request, guide_id):
+    """Elimina una guía y toda su información asociada. Solo admins."""
+    guide = get_object_or_404(DispatchGuide, pk=guide_id)
+
+    # Recopilar referencias a archivos ANTES de borrar el registro
+    fotos = []
+    for etapa in guide.etapas.prefetch_related('fotos').all():
+        if etapa.foto:
+            fotos.append(etapa.foto)
+        for p in etapa.fotos.all():
+            fotos.append(p.foto)
+
+    numero = guide.numero_guia
+    guide.delete()  # cascada: GuideStage → GuideStagePhoto
+
+    # Limpiar archivos del storage (Cloudinary en prod, filesystem en dev)
+    for foto in fotos:
+        try:
+            foto.storage.delete(foto.name)
+        except Exception:
+            pass
+
+    messages.success(request, f'Guía #{numero} eliminada correctamente.')
+    return redirect('guide_list')
+
+
+@admin_required
+def confirm_delete_guide(request, guide_id):
+    """Página de confirmación antes de eliminar una guía."""
+    guide = get_object_or_404(
+        DispatchGuide.objects.select_related('cliente', 'transportista'),
+        pk=guide_id,
+    )
+    etapas = guide.etapas.prefetch_related('fotos').all()
+    total_fotos = sum(
+        (1 if e.foto else 0) + e.fotos.count()
+        for e in etapas
+    )
+    return render(request, 'guides/confirm_delete_guide.html', {
+        'guide': guide,
+        'total_etapas': etapas.count(),
+        'total_fotos': total_fotos,
+    })
