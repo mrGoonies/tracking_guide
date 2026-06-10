@@ -159,3 +159,21 @@ class GuideStagePhoto(models.Model):
 
     def __str__(self):
         return f"{self.get_categoria_display()} — Foto {self.orden + 1} — {self.etapa}"
+
+
+class DeletedGuideNumber(models.Model):
+    """
+    Registro de números de guía eliminados manualmente.
+    Evita que el import Excel re-cree guías que fueron borradas a propósito.
+    Para permitir la re-importación, borrar el registro desde el admin.
+    """
+    numero_guia       = models.CharField(max_length=100, unique=True)
+    fecha_eliminacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Número de guía eliminada"
+        verbose_name_plural = "Números de guías eliminadas"
+        ordering = ['-fecha_eliminacion']
+
+    def __str__(self):
+        return f"#{self.numero_guia} (eliminada {self.fecha_eliminacion:%d/%m/%Y})"

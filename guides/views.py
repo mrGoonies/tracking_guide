@@ -24,7 +24,7 @@ from openpyxl import Workbook
 from .decorators import admin_or_coordinador_required, admin_required
 from .forms import CreateDispatchGuideForm, UpdateGuideStateForm, ImportClientCSVForm, ImportDispatchExcelForm
 from .utils import get_home_url_for_user, is_transportista, is_coordinador
-from .models import Client, DispatchGuide, GuideStage, GuideStagePhoto, Seller
+from .models import Client, DeletedGuideNumber, DispatchGuide, GuideStage, GuideStagePhoto, Seller
 
 def home(request):
     if request.user.is_authenticated:
@@ -681,7 +681,8 @@ def _process_sheet(ws, omitir_cr, actualizar):
         User.objects.filter(groups__name='Transportista')
                     .only('id', 'first_name', 'last_name', 'username')
     )
-    guias_existentes = set(DispatchGuide.objects.values_list('numero_guia', flat=True))
+    guias_existentes  = set(DispatchGuide.objects.values_list('numero_guia', flat=True))
+    numeros_eliminados = set(DeletedGuideNumber.objects.values_list('numero_guia', flat=True))
 
     # ── Única pasada sobre la hoja ───────────────────────────────────────
     FLUSH_EVERY = 100   # flush a BD cada N guías nuevas para limitar memoria pico
@@ -775,6 +776,11 @@ def _process_sheet(ws, omitir_cr, actualizar):
                         transporte_raw in t.username.lower()):
                     transportista = t
                     break
+
+        # ── Guía eliminada manualmente → no re-importar ─────────────────
+        if numero_guia in numeros_eliminados:
+            omitidas_cr += 1
+            continue
 
         # ── Guía existente ───────────────────────────────────────────────
         if numero_guia in guias_existentes:
@@ -975,6 +981,8 @@ def delete_guide(request, guide_id):
             fotos.append(p.foto)
 
     numero = guide.numero_guia
+    # Registrar el número antes de borrar para bloquear futuras re-importaciones
+    DeletedGuideNumber.objects.get_or_create(numero_guia=numero)
     guide.delete()  # cascada: GuideStage → GuideStagePhoto
 
     # Limpiar archivos del storage (Cloudinary en prod, filesystem en dev)

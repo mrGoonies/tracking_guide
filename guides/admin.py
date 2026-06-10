@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
-from .models import Client, DispatchGuide, GuideStage, Seller
+from .models import Client, DeletedGuideNumber, DispatchGuide, GuideStage, Seller
 
 
 class GuideStageInline(admin.TabularInline):
@@ -49,6 +49,13 @@ class ClientAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(DeletedGuideNumber)
+class DeletedGuideNumberAdmin(admin.ModelAdmin):
+    list_display = ('numero_guia', 'fecha_eliminacion')
+    search_fields = ('numero_guia',)
+    readonly_fields = ('fecha_eliminacion',)
+
+
 @admin.register(DispatchGuide)
 class DispatchGuideAdmin(admin.ModelAdmin):
     list_display = ('numero_guia', 'nv', 'nv_fecha_creacion', 'cliente', 'estado', 'transportista', 'get_vendedor_display', 'fecha_creacion')
@@ -74,6 +81,16 @@ class DispatchGuideAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def delete_model(self, request, obj):
+        DeletedGuideNumber.objects.get_or_create(numero_guia=obj.numero_guia)
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        numeros = list(queryset.values_list('numero_guia', flat=True))
+        super().delete_queryset(request, queryset)
+        for numero in numeros:
+            DeletedGuideNumber.objects.get_or_create(numero_guia=numero)
 
 
 @admin.register(GuideStage)
