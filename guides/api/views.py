@@ -1,5 +1,8 @@
+import io
 import logging
+import uuid
 
+from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, status
@@ -18,6 +21,19 @@ from .serializers import (
 )
 
 ESTADOS_REQUIEREN_FOTO = ('entregada', 'rechazada')
+
+
+def _image_to_pdf(image_file):
+    from PIL import Image
+    img = Image.open(image_file)
+    if img.mode not in ('RGB', 'L'):
+        img = img.convert('RGB')
+    buf = io.BytesIO()
+    img.save(buf, format='PDF')
+    buf.seek(0)
+    return buf
+
+
 # Transportistas no pueden cerrar guías — solo admin/coordinador desde la web
 ESTADOS_VALIDOS_TRANSPORTISTA = {'asignada', 'en_ruta', 'entregada', 'rechazada'}
 
@@ -133,9 +149,10 @@ class UpdateEstadoView(APIView):
             return Response({'error': 'Error interno al registrar la etapa.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Guardar foto de guía (solo una)
+        foto_guia_obj = None
         if foto_guia:
             try:
-                GuideStagePhoto.objects.create(etapa=etapa, foto=foto_guia, orden=0, categoria='guia')
+                foto_guia_obj = GuideStagePhoto.objects.create(etapa=etapa, foto=foto_guia, orden=0, categoria='guia')
             except Exception as exc:
                 logger.error('[UpdateEstado] Error guardando foto_guia guia=%s: %s', pk, exc, exc_info=True)
                 etapa.delete()
@@ -160,6 +177,19 @@ class UpdateEstadoView(APIView):
             logger.error('[UpdateEstado] Error guardando guide.save() guia=%s: %s', pk, exc, exc_info=True)
             etapa.delete()
             return Response({'error': 'Error interno al actualizar el estado.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Generar PDF backup de la foto de guía (no fatal)
+        if foto_guia_obj is not None and nuevo_estado in ESTADOS_REQUIEREN_FOTO:
+            try:
+                foto_guia.seek(0)
+                pdf_buf = _image_to_pdf(foto_guia)
+                foto_guia_obj.pdf_backup.save(
+                    f"{uuid.uuid4().hex[:16]}.pdf",
+                    ContentFile(pdf_buf.read()),
+                    save=True,
+                )
+            except Exception as exc:
+                logger.error('[PDF backup] Error generando PDF guia=%s: %s', pk, exc, exc_info=True)
 
         try:
             serializer = DispatchGuideDetailSerializer(
