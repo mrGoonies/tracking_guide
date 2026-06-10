@@ -13,6 +13,23 @@ def _guide_photo_path(instance, filename):
     now = timezone.now()
     return f"tracking/guide_photos/{now.year}/{now.month:02d}/{now.day:02d}/{short_name}"
 
+
+def _guide_pdf_path(instance, filename):
+    short_name = f"{uuid.uuid4().hex[:16]}.pdf"
+    from django.utils import timezone
+    now = timezone.now()
+    return f"tracking/guide_pdfs/{now.year}/{now.month:02d}/{now.day:02d}/{short_name}"
+
+
+def _pdf_storage():
+    """Storage para PDFs: filesystem en dev, Cloudinary raw en prod."""
+    from django.conf import settings
+    if settings.DEBUG:
+        from django.core.files.storage import FileSystemStorage
+        return FileSystemStorage()
+    from cloudinary_storage.storage import RawMediaCloudinaryStorage
+    return RawMediaCloudinaryStorage()
+
 class Client(models.Model):
     """Modelo para almacenar información de clientes."""
     rut = models.CharField(max_length=20, unique=True)
@@ -123,10 +140,17 @@ class GuideStagePhoto(models.Model):
         ('general', 'General'),
     ]
 
-    etapa     = models.ForeignKey(GuideStage, on_delete=models.CASCADE, related_name='fotos')
-    foto      = models.ImageField(upload_to=_guide_photo_path, max_length=500)
-    orden     = models.PositiveSmallIntegerField(default=0)
-    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='general')
+    etapa      = models.ForeignKey(GuideStage, on_delete=models.CASCADE, related_name='fotos')
+    foto       = models.ImageField(upload_to=_guide_photo_path, max_length=500)
+    orden      = models.PositiveSmallIntegerField(default=0)
+    categoria  = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='general')
+    pdf_backup = models.FileField(
+        upload_to=_guide_pdf_path,
+        storage=_pdf_storage,
+        max_length=500,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Foto de Etapa"
