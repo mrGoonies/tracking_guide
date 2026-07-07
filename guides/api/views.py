@@ -13,6 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 logger = logging.getLogger(__name__)
 
 from guides.models import DispatchGuide, GuideStage, GuideStagePhoto
+from guides.services import send_guide_status_notification
 from .permissions import IsTransportista
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -190,6 +191,9 @@ class UpdateEstadoView(APIView):
                 )
             except Exception as exc:
                 logger.error('[PDF backup] Error generando PDF guia=%s: %s', pk, exc, exc_info=True)
+
+        # Notificación por correo (no fatal)
+        send_guide_status_notification(guide, etapa)
 
         try:
             serializer = DispatchGuideDetailSerializer(

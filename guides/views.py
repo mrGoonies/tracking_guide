@@ -25,6 +25,7 @@ from .decorators import admin_or_coordinador_required, admin_required
 from .forms import CreateDispatchGuideForm, UpdateGuideStateForm, ImportClientCSVForm, ImportDispatchExcelForm
 from .utils import get_home_url_for_user, is_transportista, is_coordinador
 from .models import Client, DeletedGuideNumber, DispatchGuide, GuideStage, GuideStagePhoto, Seller
+from .services import send_guide_status_notification
 
 def home(request):
     if request.user.is_authenticated:
@@ -370,6 +371,8 @@ def guide_detail(request, guide_id):
                 if nuevo_estado in ['entregada', 'rechazada'] and not guide.fecha_envio:
                     guide.fecha_envio = timezone.localdate()
                 guide.save()
+
+                send_guide_status_notification(guide, stage)
 
                 messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
                 return redirect('guide_detail', guide_id=guide.id)
