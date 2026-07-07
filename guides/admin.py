@@ -14,13 +14,13 @@ class GuideStageInline(admin.TabularInline):
 
 @admin.register(Seller)
 class SellerAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'activo', 'fecha_creacion')
+    list_display = ('nombre', 'email', 'activo', 'fecha_creacion')
     list_filter = ('activo', 'fecha_creacion')
-    search_fields = ('nombre',)
+    search_fields = ('nombre', 'email')
     readonly_fields = ('fecha_creacion',)
     fieldsets = (
         ('Información', {
-            'fields': ('nombre', 'activo')
+            'fields': ('nombre', 'email', 'activo')
         }),
         ('Auditoría', {
             'fields': ('fecha_creacion',),
