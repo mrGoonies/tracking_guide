@@ -57,6 +57,7 @@ class Client(models.Model):
 class Seller(models.Model):
     """Modelo para vendedores y asistentes comerciales."""
     nombre = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(max_length=254, blank=True, null=True)
     activo = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
