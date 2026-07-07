@@ -1,5 +1,17 @@
+import os
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
+
+
+def _guide_photo_path(instance, filename):
+    ext = os.path.splitext(filename)[1].lower() or '.jpg'
+    from django.utils import timezone
+    now = timezone.now()
+    numero_guia = str(getattr(getattr(instance, 'guia', None), 'numero_guia', 'sin_guia') or 'sin_guia')
+    safe_guia = ''.join(c if c.isalnum() or c in '-_' else '_' for c in numero_guia)
+    return f"tracking/guide_photos/{now.year}/{now.month:02d}/{now.day:02d}/{safe_guia}/{uuid.uuid4().hex[:16]}{ext}"
 
 class Client(models.Model):
     """Modelo para almacenar información de clientes."""
@@ -91,7 +103,7 @@ class GuideStage(models.Model):
     guia = models.ForeignKey(DispatchGuide, on_delete=models.CASCADE, related_name='etapas')
     estado = models.CharField(max_length=20, choices=STATUS_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
-    foto = models.ImageField(upload_to='guide_photos/%Y/%m/%d/', blank=True, null=True)
+    foto = models.ImageField(upload_to=_guide_photo_path, max_length=500, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
