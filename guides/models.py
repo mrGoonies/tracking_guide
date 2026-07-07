@@ -6,12 +6,19 @@ from django.contrib.auth.models import User
 
 
 def _guide_photo_path(instance, filename):
-    """Genera un path corto con UUID para evitar exceder max_length del campo foto."""
     ext = os.path.splitext(filename)[1].lower() or '.jpg'
-    short_name = f"{uuid.uuid4().hex[:16]}{ext}"
     from django.utils import timezone
     now = timezone.now()
-    return f"tracking/guide_photos/{now.year}/{now.month:02d}/{now.day:02d}/{short_name}"
+    try:
+        # GuideStage tiene FK directa; GuideStagePhoto llega via etapa
+        if hasattr(instance, 'guia'):
+            numero_guia = instance.guia.numero_guia
+        else:
+            numero_guia = instance.etapa.guia.numero_guia
+        safe_guia = ''.join(c if c.isalnum() or c in '-_' else '_' for c in str(numero_guia))
+    except Exception:
+        safe_guia = 'sin_guia'
+    return f"tracking/guide_photos/{now.year}/{now.month:02d}/{now.day:02d}/{safe_guia}/{uuid.uuid4().hex[:16]}{ext}"
 
 
 def _guide_pdf_path(instance, filename):

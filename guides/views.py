@@ -352,7 +352,6 @@ def guide_detail(request, guide_id):
             nuevo_estado = form.cleaned_data['nuevo_estado']
             evidencia_foto = form.cleaned_data.get('evidencia_foto')
             notas = form.cleaned_data.get('notas', '')
-<<<<<<< HEAD
 
             fotos = request.FILES.getlist('evidencia_fotos')
 
@@ -374,23 +373,6 @@ def guide_detail(request, guide_id):
 
                 messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
                 return redirect('guide_detail', guide_id=guide.id)
-=======
-            
-            GuideStage.objects.create(
-                guia=guide,
-                estado=nuevo_estado,
-                foto=evidencia_foto,
-                observaciones=notas
-            )
-            
-            guide.estado = nuevo_estado
-            if nuevo_estado in ['entregada', 'rechazada'] and not guide.fecha_envio:
-                guide.fecha_envio = timezone.localdate()
-            guide.save()
-            
-            messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
-            return redirect('guide_detail', guide_id=guide.id)
->>>>>>> develop
     else:
         form = UpdateGuideStateForm()
     
