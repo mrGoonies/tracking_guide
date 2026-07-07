@@ -152,13 +152,7 @@ class GuideStagePhoto(models.Model):
     foto       = models.ImageField(upload_to=_guide_photo_path, max_length=500)
     orden      = models.PositiveSmallIntegerField(default=0)
     categoria  = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='general')
-    pdf_backup = models.FileField(
-        upload_to=_guide_pdf_path,
-        storage=_pdf_storage,
-        max_length=500,
-        null=True,
-        blank=True,
-    )
+    pdf_backup = models.URLField(max_length=500, null=True, blank=True)
 
     class Meta:
         verbose_name = "Foto de Etapa"
