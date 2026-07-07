@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 
 
 def _guide_photo_path(instance, filename):
-<<<<<<< HEAD
     """Genera un path corto con UUID para evitar exceder max_length del campo foto."""
     ext = os.path.splitext(filename)[1].lower() or '.jpg'
     short_name = f"{uuid.uuid4().hex[:16]}{ext}"
@@ -30,14 +29,6 @@ def _pdf_storage():
         return FileSystemStorage()
     from cloudinary_storage.storage import RawMediaCloudinaryStorage
     return RawMediaCloudinaryStorage()
-=======
-    ext = os.path.splitext(filename)[1].lower() or '.jpg'
-    from django.utils import timezone
-    now = timezone.now()
-    numero_guia = str(getattr(getattr(instance, 'guia', None), 'numero_guia', 'sin_guia') or 'sin_guia')
-    safe_guia = ''.join(c if c.isalnum() or c in '-_' else '_' for c in numero_guia)
-    return f"tracking/guide_photos/{now.year}/{now.month:02d}/{now.day:02d}/{safe_guia}/{uuid.uuid4().hex[:16]}{ext}"
->>>>>>> develop
 
 class Client(models.Model):
     """Modelo para almacenar información de clientes."""
