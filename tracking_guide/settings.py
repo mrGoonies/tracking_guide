@@ -206,3 +206,10 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES':      ('Bearer',),
     'TOKEN_OBTAIN_SERIALIZER': 'guides.api.serializers.CustomTokenObtainPairSerializer',
 }
+
+# ──────────────────────────────────────────────
+# Correo transaccional (Mailchimp Transactional / Mandrill)
+# ──────────────────────────────────────────────
+MANDRILL_API_KEY    = os.environ.get('MANDRILL_API_KEY', '')
+MANDRILL_FROM_EMAIL = os.environ.get('MANDRILL_FROM_EMAIL', '')
+LOGISTICS_EMAIL     = os.environ.get('LOGISTICS_EMAIL', '')
