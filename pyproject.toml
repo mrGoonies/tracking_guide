@@ -7,4 +7,5 @@ requires-python = ">=3.10"
 dependencies = [
     "django-rest-framework>=0.1.0",
     "openpyxl>=3.1.5",
+    "packages>=0.1.1",
 ]

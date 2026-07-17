@@ -35,8 +35,13 @@ def home(request):
 
 @admin_or_coordinador_required
 def hub(request):
+    # Cards del homepage: métricas del día actual, no acumulado histórico.
+    # 'en_ruta' y 'pendientes' son snapshots del estado presente (no se filtran
+    # por fecha) para no ocultar guías atrasadas de días anteriores.
     resumen = {
-        'total_guias': DispatchGuide.objects.count(),
+        'guias_emitidas_hoy': DispatchGuide.objects.filter(
+            fecha_creacion__date=timezone.localdate()
+        ).count(),
         'en_ruta': DispatchGuide.objects.filter(estado='en_ruta').count(),
         'pendientes': DispatchGuide.objects.filter(estado__in=['emitida', 'asignada']).count(),
         'entregadas_hoy': DispatchGuide.objects.filter(
