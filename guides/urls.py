@@ -8,6 +8,7 @@ urlpatterns = [
     path('logout/', views.user_logout, name='logout'),
     path('clientes/buscar/', views.search_client_by_rut, name='search_client'),
     path('guias/', views.guide_list, name='guide_list'),
+    path('guias/cerradas/', views.closed_guides, name='closed_guides'),
     path('guias/nueva/', views.create_guide, name='create_guide'),
     path('guias/<int:guide_id>/', views.guide_detail, name='guide_detail'),
     path('guias/exportar-planificacion/', views.export_route_planning, name='export_route_planning'),

@@ -78,16 +78,35 @@ def user_logout(request):
 
 @admin_or_coordinador_required
 def guide_list(request):
+    """Listado operativo: excluye guías cerradas (ver `closed_guides` para esas)."""
     estado_filtro = request.GET.get('estado', '').strip()
-    guides = DispatchGuide.objects.select_related('cliente', 'transportista', 'vendedor').order_by('-fecha_creacion')
-    
+    guides = DispatchGuide.objects.exclude(estado='cerrada').select_related(
+        'cliente', 'transportista', 'vendedor'
+    ).order_by('-fecha_creacion')
+
     if estado_filtro:
         guides = guides.filter(estado=estado_filtro)
-    
+
     context = {
         'guides': guides,
         'estado_filtro': estado_filtro,
-        'estado_choices': DispatchGuide.STATUS_CHOICES,
+        'estado_choices': [c for c in DispatchGuide.STATUS_CHOICES if c[0] != 'cerrada'],
+        'vista_cerradas': False,
+    }
+    return render(request, 'guides/guide_list.html', context)
+
+
+@admin_or_coordinador_required
+def closed_guides(request):
+    """Listado exclusivo de guías cerradas (archivo), separado del operativo."""
+    guides = DispatchGuide.objects.filter(estado='cerrada').select_related(
+        'cliente', 'transportista', 'vendedor'
+    ).order_by('-fecha_actualizacion')
+
+    context = {
+        'guides': guides,
+        'estado_filtro': 'cerrada',
+        'vista_cerradas': True,
     }
     return render(request, 'guides/guide_list.html', context)
 

@@ -524,20 +524,26 @@
 
         <div class="toolbar">
             <div class="toolbar-left">
-                <span class="page-title">Guías</span>
+                <span class="page-title">{% if vista_cerradas %}Guías Cerradas{% else %}Guías{% endif %}</span>
                 <span class="count-badge">{{ guides|length }} resultado{{ guides|length|pluralize:"s" }}</span>
-                {% if estado_filtro %}
+                {% if estado_filtro and not vista_cerradas %}
                     <a href="{% url 'guide_list' %}" class="active-filter">
                         {{ estado_filtro|capfirst }} &times;
                     </a>
                 {% endif %}
             </div>
             <div class="toolbar-right">
+                {% if vista_cerradas %}
+                    <a href="{% url 'guide_list' %}" class="btn btn-outline">← Guías activas</a>
+                {% else %}
+                    <a href="{% url 'closed_guides' %}" class="btn btn-outline">Ver cerradas</a>
+                {% endif %}
                 <a href="{% url 'create_guide' %}" class="btn btn-primary">+ Nueva Guía</a>
             </div>
         </div>
 
         <!-- Filtros -->
+        {% if not vista_cerradas %}
         <div class="filters">
             <form method="get" action="{% url 'guide_list' %}" style="display:contents;">
                 <div class="filter-group">
@@ -572,6 +578,7 @@
                 </div>
             </form>
         </div>
+        {% endif %}
 
         <!-- Lista de guías -->
         {% if guides %}
@@ -654,16 +661,20 @@
         <div class="empty">
             <div class="empty-icon">📭</div>
             <div class="empty-title">
-                {% if estado_filtro %}No hay guías con estado "{{ estado_filtro }}"{% else %}No hay guías registradas{% endif %}
+                {% if vista_cerradas %}Aún no hay guías cerradas{% elif estado_filtro %}No hay guías con estado "{{ estado_filtro }}"{% else %}No hay guías registradas{% endif %}
             </div>
             <div class="empty-sub">
-                {% if estado_filtro %}
+                {% if vista_cerradas %}
+                    Las guías aparecen aquí una vez que se cierran desde su detalle.
+                {% elif estado_filtro %}
                     Prueba con otro filtro o limpia la búsqueda.
                 {% else %}
                     Crea la primera guía de despacho para comenzar.
                 {% endif %}
             </div>
-            {% if not estado_filtro %}
+            {% if vista_cerradas %}
+                <a href="{% url 'guide_list' %}" class="btn btn-outline">← Guías activas</a>
+            {% elif not estado_filtro %}
                 <a href="{% url 'create_guide' %}" class="btn btn-primary">+ Nueva Guía</a>
             {% else %}
                 <a href="{% url 'guide_list' %}" class="btn btn-outline">Ver todas</a>
