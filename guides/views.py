@@ -2,6 +2,7 @@ import csv
 import gc
 import io
 import os
+import re
 import tempfile
 import unicodedata
 from datetime import timedelta, datetime, date as date_type
@@ -629,6 +630,19 @@ def _find_col(headers, candidates):
     return None
 
 
+_URL_RE = re.compile(r'https?://\S+')
+
+
+def _extract_maps_link(value):
+    """Extrae la primera URL (texto plano) encontrada en la celda 'Tipo de pedido'."""
+    if not value:
+        return None
+    match = _URL_RE.search(str(value))
+    if not match:
+        return None
+    return match.group(0).rstrip('.,;)')
+
+
 def _parse_date(value):
     if value is None:
         return None
@@ -717,9 +731,11 @@ def _process_sheet(ws, omitir_cr, actualizar):
     col = {}
     header_found = False
     row_num = 0
+    tipo_pedido_col_encontrada = False
 
     creadas = actualizadas = omitidas_cr = 0
     errores = []
+    sin_link = []   # numero_guia de guías importadas/actualizadas sin link de Maps
     guides_nuevas  = []   # objetos DispatchGuide para bulk_create
     estados_nuevas = []   # estado inicial de cada guía nueva (mismo orden)
     updates_pendientes = {}  # {numero_guia: {campo: valor}}
@@ -746,7 +762,9 @@ def _process_sheet(ws, omitir_cr, actualizar):
                 'creado_por':  _find_col(headers, ['CREADO_POR', 'CREADOPOR', 'VENDEDOR']),
                 'transporte':  _find_col(headers, ['TRANSPORTE']),
                 'despacho':    _find_col(headers, ['DESPACHO', 'FECHA_DESPACHO']),
+                'tipo_pedido': _find_col(headers, ['TIPO_DE_PEDIDO', 'TIPO_PEDIDO']),
             }
+            tipo_pedido_col_encontrada = col.get('tipo_pedido') is not None
             header_found = True
             continue
 
@@ -783,6 +801,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
         nv_fecha    = _parse_date(get('creacion'))
         fecha_envio = _parse_date(get('fecha_envio'))
         fecha_desp  = _parse_date(get('despacho'))
+        map_link    = _extract_maps_link(get('tipo_pedido'))
 
         creado_por_raw = str(get('creado_por') or '').strip()
         vendedor_obj = vendedor_nombre = None
@@ -822,6 +841,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
                     'vendedor': vendedor_obj,
                     'vendedor_nombre': vendedor_nombre,
                     'transportista': transportista,
+                    'map_link': map_link,
                 }
             continue
 
@@ -841,9 +861,12 @@ def _process_sheet(ws, omitir_cr, actualizar):
             fecha_despacho=fecha_desp,
             notas=referencia or None,
             estado=estado_inicial,
+            map_link=map_link,
         ))
         estados_nuevas.append(estado_inicial)
         guias_existentes.add(numero_guia)  # evita duplicados dentro del mismo archivo Excel
+        if tipo_pedido_col_encontrada and not map_link:
+            sin_link.append(numero_guia)
 
         # Flush parcial: evita acumular cientos de objetos en RAM
         if len(guides_nuevas) >= FLUSH_EVERY:
@@ -885,6 +908,12 @@ def _process_sheet(ws, omitir_cr, actualizar):
                 if guide.estado == 'emitida':
                     guide.estado = 'asignada'
                     changed_fields.add('estado')
+            # No se pisa un link cargado manualmente: solo se completa si estaba vacío
+            if data.get('map_link') and not guide.map_link:
+                guide.map_link = data['map_link']
+                changed_fields.add('map_link')
+            if tipo_pedido_col_encontrada and not guide.map_link:
+                sin_link.append(guide.numero_guia)
         if changed_fields:
             DispatchGuide.objects.bulk_update(guias_qs, fields=list(changed_fields), batch_size=200)
         actualizadas = len(guias_qs)
@@ -895,6 +924,8 @@ def _process_sheet(ws, omitir_cr, actualizar):
         'omitidas_cr': omitidas_cr,
         'errores': errores,
         'total': creadas + actualizadas + omitidas_cr + len(errores),
+        'sin_link': sin_link,
+        'tipo_pedido_col_encontrada': tipo_pedido_col_encontrada,
     }, None
 
 

@@ -127,6 +127,19 @@
         </table>
         </div>
         {% endif %}
+
+        {% if not result.tipo_pedido_col_encontrada %}
+        <div class="info-box" style="margin-top:16px;">
+            No se encontró la columna <strong>TIPO DE PEDIDO</strong> en el archivo: no se importó ningún link de Google Maps.
+        </div>
+        {% elif result.sin_link %}
+        <div class="info-box" style="margin-top:16px;">
+            <strong>{{ result.sin_link|length }} guía(s) quedaron sin link de Google Maps</strong> (no se encontró una URL en la columna TIPO DE PEDIDO):
+            <div style="margin-top:6px;">
+                {% for numero in result.sin_link %}<code style="margin:2px;">{{ numero }}</code>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <a href="{% url 'import_guides_excel' %}"
@@ -199,6 +212,7 @@
                 <tr><td><code>REFERENCIA</code></td><td>Notas de la guía</td><td>Si contiene "cliente retira" la fila se omite</td></tr>
                 <tr><td><code>CREADO POR</code></td><td>Vendedor / Asistente</td><td>Se busca por nombre; si no existe se guarda como texto</td></tr>
                 <tr><td><code>TRANSPORTE</code></td><td>Transportista</td><td>Se busca por nombre en el grupo Transportista</td></tr>
+                <tr><td><code>TIPO DE PEDIDO</code></td><td>Link Google Maps <span class="badge-opt">Opcional</span></td><td>Se extrae automáticamente la URL contenida en la celda. Si la guía ya tiene un link cargado manualmente, no se sobrescribe.</td></tr>
             </tbody>
         </table>
         <div class="info-box">
