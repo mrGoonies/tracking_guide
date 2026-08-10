@@ -36,11 +36,10 @@ def _upload_guide_pdf(image_file, guide):
     from django.utils import timezone
 
     now = timezone.now()
-    timestamp = now.strftime('%Y-%m-%d_%H%M')
     safe_guia = ''.join(c if c.isalnum() or c in '-_' else '_' for c in str(guide.numero_guia))
     public_id = (
         f"tracking/guide_pdfs/{now.year}/{now.month:02d}/{now.day:02d}/"
-        f"{safe_guia}_{timestamp}.pdf"
+        f"GUIA_DESPACHO_{safe_guia}.pdf"
     )
 
     try:
