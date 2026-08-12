@@ -1,7 +1,10 @@
+import base64
+import io
 import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,59 @@ def _get_latest_stage(guide):
     return guide.etapas.filter(estado=guide.estado).order_by('-timestamp').first()
 
 
-def _build_email_body(guide, stage):
+def _generate_pdf_bytes(image_file):
+    """Convierte una foto (guía de despacho firmada) a PDF en memoria."""
+    from PIL import Image
+    image_file.seek(0)
+    img = Image.open(image_file)
+    if img.mode not in ('RGB', 'L'):
+        img = img.convert('RGB')
+    buf = io.BytesIO()
+    img.save(buf, format='PDF')
+    return buf.getvalue()
+
+
+def generate_guide_pdf_backup(image_file, guide):
+    """
+    Convierte la foto de la guía firmada a PDF y la sube a Cloudinary como
+    respaldo (solo en producción, igual que las fotos).
+
+    Devuelve (pdf_bytes, secure_url). pdf_bytes se retorna siempre que la
+    conversión funcione (se usa para adjuntarlo al correo); secure_url es
+    None en DEBUG o si la subida a Cloudinary falla — ninguno de los dos
+    casos es fatal para el flujo que llama a esta función.
+    """
+    try:
+        pdf_bytes = _generate_pdf_bytes(image_file)
+    except Exception as exc:
+        logger.error('[PDF] Error generando PDF. guia=%s: %s', guide.numero_guia, exc, exc_info=True)
+        return None, None
+
+    if settings.DEBUG:
+        return pdf_bytes, None
+
+    import cloudinary.uploader
+
+    now = timezone.now()
+    safe_guia = ''.join(c if c.isalnum() or c in '-_' else '_' for c in str(guide.numero_guia))
+    public_id = (
+        f"tracking/guide_pdfs/{now.year}/{now.month:02d}/{now.day:02d}/"
+        f"GUIA_DESPACHO_{safe_guia}.pdf"
+    )
+    try:
+        result = cloudinary.uploader.upload(
+            io.BytesIO(pdf_bytes),
+            resource_type='raw',
+            public_id=public_id,
+            overwrite=True,
+        )
+        return pdf_bytes, result.get('secure_url')
+    except Exception as exc:
+        logger.error('[PDF] Error subiendo PDF a Cloudinary. guia=%s: %s', guide.numero_guia, exc, exc_info=True)
+        return pdf_bytes, None
+
+
+def _build_email_body(guide, stage, has_pdf_attachment=False):
     """HTML compartido entre notificaciones al vendedor y a coordinadores."""
     estado_label = 'Entregada' if guide.estado == 'entregada' else 'Rechazada'
     estado_color = '#2d7a35' if guide.estado == 'entregada' else '#c0392b'
@@ -57,6 +112,13 @@ def _build_email_body(guide, stage):
         f'<p style="margin:4px 0;"><a href="{url}" style="color:#2d7a35;">{url}</a></p>'
         for url in foto_urls
     ) or '<p>Sin fotografías adjuntas.</p>'
+
+    pdf_html = (
+        '<p style="margin-top:16px;padding:10px 14px;background:#e8f5e9;'
+        'border-radius:6px;color:#1b5e20;font-weight:600;">'
+        '📎 Se adjunta la guía de despacho firmada en PDF.</p>'
+        if has_pdf_attachment else ''
+    )
 
     return f"""
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
@@ -88,24 +150,34 @@ def _build_email_body(guide, stage):
           Fotografías del transportista
         </h3>
         {fotos_html}
+        {pdf_html}
       </div>
     </div>
     """
 
 
-def _send_message(client, *, to, subject, html_body, guide_numero):
+def _build_pdf_attachment(pdf_bytes, guide):
+    return {
+        'type': 'application/pdf',
+        'name': f'NotaVenta_Firmada_{guide.numero_guia}.pdf',
+        'content': base64.b64encode(pdf_bytes).decode('ascii'),
+    }
+
+
+def _send_message(client, *, to, subject, html_body, guide_numero, attachments=None):
     """Envía un mensaje Mandrill. Loguea el error y retorna False si falla."""
     from_email = getattr(settings, 'MANDRILL_FROM_EMAIL', '')
+    message = {
+        'html': html_body,
+        'subject': subject,
+        'from_email': from_email,
+        'from_name': 'Irritec Logística',
+        'to': to,
+    }
+    if attachments:
+        message['attachments'] = attachments
     try:
-        client.messages.send({
-            'message': {
-                'html': html_body,
-                'subject': subject,
-                'from_email': from_email,
-                'from_name': 'Irritec Logística',
-                'to': to,
-            }
-        })
+        client.messages.send({'message': message})
         return True
     except Exception as exc:
         logger.error(
@@ -117,10 +189,11 @@ def _send_message(client, *, to, subject, html_body, guide_numero):
 
 # ── Funciones públicas ────────────────────────────────────────────────────────
 
-def send_seller_notification(guide):
+def send_seller_notification(guide, pdf_bytes=None):
     """
     Notifica al vendedor/asistente (Seller.email) cuando la guía cambia a
-    'entregada' o 'rechazada'. No lanza excepciones.
+    'entregada' o 'rechazada'. Si se entrega `pdf_bytes` (la guía firmada
+    convertida a PDF), se adjunta al correo. No lanza excepciones.
     """
     if guide.estado not in _ESTADOS_NOTIFICACION:
         return
@@ -147,12 +220,14 @@ def send_seller_notification(guide):
     )
 
     stage = _get_latest_stage(guide)
+    attachments = [_build_pdf_attachment(pdf_bytes, guide)] if pdf_bytes else None
     sent = _send_message(
         client,
         to=[{'email': guide.vendedor.email, 'type': 'to'}],
         subject=subject,
-        html_body=_build_email_body(guide, stage),
+        html_body=_build_email_body(guide, stage, has_pdf_attachment=bool(pdf_bytes)),
         guide_numero=guide.numero_guia,
+        attachments=attachments,
     )
     if sent:
         logger.info(
@@ -161,10 +236,12 @@ def send_seller_notification(guide):
         )
 
 
-def send_coordinator_notification(guide):
+def send_coordinator_notification(guide, pdf_bytes=None):
     """
     Notifica a todos los usuarios activos del grupo 'Coordinador' que tengan
-    email cuando la guía cambia a 'entregada' o 'rechazada'. No lanza excepciones.
+    email cuando la guía cambia a 'entregada' o 'rechazada'. Si se entrega
+    `pdf_bytes` (la guía firmada convertida a PDF), se adjunta al correo.
+    No lanza excepciones.
     """
     if guide.estado not in _ESTADOS_NOTIFICACION:
         return
@@ -196,12 +273,14 @@ def send_coordinator_notification(guide):
     )
 
     stage = _get_latest_stage(guide)
+    attachments = [_build_pdf_attachment(pdf_bytes, guide)] if pdf_bytes else None
     sent = _send_message(
         client,
         to=[{'email': email, 'type': 'to'} for email in emails],
         subject=subject,
-        html_body=_build_email_body(guide, stage),
+        html_body=_build_email_body(guide, stage, has_pdf_attachment=bool(pdf_bytes)),
         guide_numero=guide.numero_guia,
+        attachments=attachments,
     )
     if sent:
         logger.info(

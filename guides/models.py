@@ -81,6 +81,10 @@ class DispatchGuide(models.Model):
         ('cerrada', 'Cerrada'),
     ]
 
+    # Estados que exigen evidencia fotográfica (y disparan la generación del
+    # PDF de la guía firmada + notificación por correo).
+    ESTADOS_REQUIEREN_FOTO = ('entregada', 'rechazada')
+
     numero_guia = models.CharField(max_length=100, unique=True)
     nv = models.CharField(max_length=100, blank=True, null=True, verbose_name='Nota de Venta')
     nv_fecha_creacion = models.DateField(blank=True, null=True, verbose_name='Fecha creación NV')

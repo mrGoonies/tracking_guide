@@ -1,4 +1,3 @@
-import io
 import logging
 
 from django.shortcuts import get_object_or_404
@@ -11,7 +10,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 logger = logging.getLogger(__name__)
 
 from guides.models import DispatchGuide, GuideStage, GuideStagePhoto
-from guides.services import send_seller_notification, send_coordinator_notification
+from guides.services import (
+    send_seller_notification,
+    send_coordinator_notification,
+    generate_guide_pdf_backup,
+)
 from .permissions import IsTransportista
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -19,49 +22,7 @@ from .serializers import (
     DispatchGuideDetailSerializer,
 )
 
-ESTADOS_REQUIEREN_FOTO = ('entregada', 'rechazada')
-
-
-def _upload_guide_pdf(image_file, guide):
-    """
-    Converts the guide photo to PDF locally (Pillow) and uploads it to Cloudinary
-    as a raw resource. Skipped in DEBUG mode. Returns the secure URL or None.
-    """
-    from django.conf import settings
-    if settings.DEBUG:
-        return None
-
-    import cloudinary.uploader
-    from PIL import Image
-    from django.utils import timezone
-
-    now = timezone.now()
-    safe_guia = ''.join(c if c.isalnum() or c in '-_' else '_' for c in str(guide.numero_guia))
-    public_id = (
-        f"tracking/guide_pdfs/{now.year}/{now.month:02d}/{now.day:02d}/"
-        f"GUIA_DESPACHO_{safe_guia}.pdf"
-    )
-
-    try:
-        image_file.seek(0)
-        img = Image.open(image_file)
-        if img.mode not in ('RGB', 'L'):
-            img = img.convert('RGB')
-        pdf_buf = io.BytesIO()
-        img.save(pdf_buf, format='PDF')
-        pdf_buf.seek(0)
-
-        result = cloudinary.uploader.upload(
-            pdf_buf,
-            resource_type='raw',
-            public_id=public_id,
-            overwrite=True,
-        )
-        return result.get('secure_url')
-    except Exception as exc:
-        logger.error('[PDF] Error generando PDF. guia=%s: %s', guide.numero_guia, exc, exc_info=True)
-        return None
-
+ESTADOS_REQUIEREN_FOTO = DispatchGuide.ESTADOS_REQUIEREN_FOTO
 
 # Transportistas no pueden cerrar guías — solo admin/coordinador desde la web
 ESTADOS_VALIDOS_TRANSPORTISTA = {'asignada', 'en_ruta', 'entregada', 'rechazada'}
@@ -207,16 +168,18 @@ class UpdateEstadoView(APIView):
             etapa.delete()
             return Response({'error': 'Error interno al actualizar el estado.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Generar PDF backup de la foto de guía firmada (no fatal)
+        # Generar PDF de la guía firmada (no fatal). pdf_bytes se usa para
+        # adjuntarlo al correo; el backup en Cloudinary es best-effort.
+        pdf_bytes = None
         if foto_guia_obj is not None and nuevo_estado in ESTADOS_REQUIEREN_FOTO:
-            pdf_url = _upload_guide_pdf(foto_guia, guide)
+            pdf_bytes, pdf_url = generate_guide_pdf_backup(foto_guia, guide)
             if pdf_url:
                 foto_guia_obj.pdf_backup = pdf_url
                 foto_guia_obj.save(update_fields=['pdf_backup'])
 
         # Notificaciones por correo (no fatales)
-        send_seller_notification(guide)
-        send_coordinator_notification(guide)
+        send_seller_notification(guide, pdf_bytes=pdf_bytes)
+        send_coordinator_notification(guide, pdf_bytes=pdf_bytes)
 
         try:
             serializer = DispatchGuideDetailSerializer(

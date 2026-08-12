@@ -26,7 +26,7 @@ from .decorators import admin_or_coordinador_required, admin_required
 from .forms import CreateDispatchGuideForm, UpdateGuideStateForm, ImportClientCSVForm, ImportDispatchExcelForm
 from .utils import get_home_url_for_user, is_transportista, is_coordinador
 from .models import Client, DeletedGuideNumber, DispatchGuide, GuideStage, GuideStagePhoto, Seller
-from .services import send_seller_notification, send_coordinator_notification
+from .services import send_seller_notification, send_coordinator_notification, generate_guide_pdf_backup
 
 def home(request):
     if request.user.is_authenticated:
@@ -380,8 +380,9 @@ def guide_detail(request, guide_id):
             notas = form.cleaned_data.get('notas', '')
 
             fotos = request.FILES.getlist('evidencia_fotos')
+            requiere_evidencia = nuevo_estado in DispatchGuide.ESTADOS_REQUIEREN_FOTO
 
-            if nuevo_estado in ('entregada', 'rechazada') and not fotos:
+            if requiere_evidencia and not fotos:
                 form.add_error('evidencia_foto', 'Debes subir al menos una foto al marcar como entregada o rechazada.')
             else:
                 stage = GuideStage.objects.create(
@@ -389,16 +390,26 @@ def guide_detail(request, guide_id):
                     estado=nuevo_estado,
                     observaciones=notas
                 )
+
+                # La primera foto se toma como la guía de despacho firmada:
+                # se categoriza aparte y se convierte a PDF para adjuntar al correo.
+                pdf_bytes = None
                 for i, foto in enumerate(fotos):
-                    GuideStagePhoto.objects.create(etapa=stage, foto=foto, orden=i)
+                    categoria = ('guia' if i == 0 else 'cliente') if requiere_evidencia else 'general'
+                    foto_obj = GuideStagePhoto.objects.create(etapa=stage, foto=foto, orden=i, categoria=categoria)
+                    if categoria == 'guia':
+                        pdf_bytes, pdf_url = generate_guide_pdf_backup(foto, guide)
+                        if pdf_url:
+                            foto_obj.pdf_backup = pdf_url
+                            foto_obj.save(update_fields=['pdf_backup'])
 
                 guide.estado = nuevo_estado
-                if nuevo_estado in ['entregada', 'rechazada'] and not guide.fecha_envio:
+                if requiere_evidencia and not guide.fecha_envio:
                     guide.fecha_envio = timezone.localdate()
                 guide.save()
 
-                send_seller_notification(guide)
-                send_coordinator_notification(guide)
+                send_seller_notification(guide, pdf_bytes=pdf_bytes)
+                send_coordinator_notification(guide, pdf_bytes=pdf_bytes)
 
                 messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
                 return redirect('guide_detail', guide_id=guide.id)
