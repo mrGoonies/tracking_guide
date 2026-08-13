@@ -164,8 +164,20 @@ def _build_pdf_attachment(pdf_bytes, guide):
     }
 
 
+_ESTADOS_ENTREGA_OK = {'sent', 'queued', 'scheduled'}
+
+
 def _send_message(client, *, to, subject, html_body, guide_numero, attachments=None):
-    """Envía un mensaje Mandrill. Loguea el error y retorna False si falla."""
+    """
+    Envía un mensaje Mandrill. Mandrill no lanza excepción cuando rechaza a un
+    destinatario puntual (dirección inválida, bloqueada en su rejection
+    blacklist por bounces previos, etc.) — lo informa en el status de cada
+    destinatario dentro de la respuesta. Por eso, además de capturar errores
+    de la llamada, se revisa esa respuesta y se loguea cada destinatario que
+    no haya quedado 'sent'/'queued'/'scheduled'.
+
+    Retorna True si al menos un destinatario recibió el correo.
+    """
     from_email = getattr(settings, 'MANDRILL_FROM_EMAIL', '')
     message = {
         'html': html_body,
@@ -177,14 +189,26 @@ def _send_message(client, *, to, subject, html_body, guide_numero, attachments=N
     if attachments:
         message['attachments'] = attachments
     try:
-        client.messages.send({'message': message})
-        return True
+        response = client.messages.send({'message': message})
     except Exception as exc:
         logger.error(
             '[Mandrill] Error enviando correo. guia=%s destinatarios=%s error=%s',
             guide_numero, [r['email'] for r in to], exc, exc_info=True,
         )
         return False
+
+    sent_ok = False
+    for result in response:
+        if result.get('status') in _ESTADOS_ENTREGA_OK:
+            sent_ok = True
+        else:
+            logger.warning(
+                '[Mandrill] Destinatario no recibió el correo. guia=%s email=%s '
+                'status=%s motivo=%s',
+                guide_numero, result.get('email'), result.get('status'),
+                result.get('reject_reason'),
+            )
+    return sent_ok
 
 
 # ── Funciones públicas ────────────────────────────────────────────────────────
