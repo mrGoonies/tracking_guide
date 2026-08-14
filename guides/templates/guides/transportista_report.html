@@ -1,32 +1,35 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte Transportistas — Irritec</title>
+    <link rel="stylesheet" href="{% static 'guides/css/design-system.css' %}">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f4f6f8;
-            color: #1a1a2e;
+            font-family: var(--font-sans);
+            background: var(--color-bg);
+            color: var(--color-text);
             min-height: 100vh;
+            line-height: 1.6;
         }
 
         /* Topbar */
         .topbar {
-            background: #2d7a35;
+            background: var(--color-primary-strong);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
+            padding: 0 var(--space-6);
             height: 56px;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            box-shadow: var(--shadow-sm);
         }
         .topbar-left { display: flex; align-items: center; gap: 12px; }
         .topbar-back {
@@ -40,43 +43,46 @@
         .topbar-sub { font-size: 12px; opacity: .75; }
 
         /* Layout */
-        .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+        .container { max-width: 1100px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
 
         /* Filtro */
         .filter-card {
-            background: #fff;
-            border-radius: 12px;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
             padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            margin-bottom: var(--space-6);
+            box-shadow: var(--shadow-sm);
         }
-        .filter-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
+        .filter-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
         .filter-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
         .filter-group { display: flex; flex-direction: column; gap: 4px; }
-        .filter-group label { font-size: 12px; color: #555; font-weight: 500; }
+        .filter-group label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; }
         .filter-group input {
             padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid var(--color-border-strong);
+            border-radius: var(--radius-sm);
             font-size: 14px;
-            color: #1a1a2e;
+            color: var(--color-text);
+            background: var(--color-surface-muted);
         }
         .btn-filter {
             padding: 9px 20px;
-            background: #2d7a35;
-            color: #fff;
+            background: var(--color-primary-strong);
+            color: var(--color-text-on-primary);
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
+            transition: background var(--transition-base);
         }
+        .btn-filter:hover { background: var(--color-primary-dark); }
         .btn-clear {
             padding: 9px 16px;
-            background: #f4f6f8;
-            color: #555;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            background: var(--color-surface-muted);
+            color: var(--color-text-secondary);
+            border: 1px solid var(--color-border-strong);
+            border-radius: var(--radius-sm);
             font-size: 14px;
             text-decoration: none;
         }
@@ -86,75 +92,75 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 14px;
-            margin-bottom: 28px;
+            margin-bottom: var(--space-7);
         }
         .kpi-card {
-            background: #fff;
-            border-radius: 12px;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
             padding: 18px 16px;
-            box-shadow: 0 1px 4px rgba(0,0,0,.08);
-            border-top: 3px solid #ddd;
+            box-shadow: var(--shadow-sm);
+            border-top: 3px solid var(--color-border);
             text-align: center;
         }
-        .kpi-card.green  { border-top-color: #2d7a35; }
-        .kpi-card.blue   { border-top-color: #1a56db; }
-        .kpi-card.orange { border-top-color: #f0a500; }
-        .kpi-card.teal   { border-top-color: #17a2b8; }
-        .kpi-card.red    { border-top-color: #dc3545; }
-        .kpi-card.purple { border-top-color: #6f42c1; }
-        .kpi-value { font-size: 32px; font-weight: 800; color: #1a1a2e; line-height: 1; }
-        .kpi-label { font-size: 12px; color: #666; margin-top: 6px; }
+        .kpi-card.green  { border-top-color: var(--color-primary); }
+        .kpi-card.blue   { border-top-color: var(--color-info-text); }
+        .kpi-card.orange { border-top-color: var(--color-warning-text); }
+        .kpi-card.teal   { border-top-color: var(--color-accent-teal-text); }
+        .kpi-card.red    { border-top-color: var(--color-danger); }
+        .kpi-card.purple { border-top-color: var(--color-accent-purple-text); }
+        .kpi-value { font-size: 32px; font-weight: 800; color: var(--color-text); line-height: 1; }
+        .kpi-label { font-size: 12px; color: var(--color-text-secondary); margin-top: 6px; }
 
         /* Table */
         .table-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
             overflow: hidden;
         }
         .table-header {
             padding: 18px 20px 14px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--color-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .table-title { font-size: 16px; font-weight: 700; }
-        .table-sub { font-size: 12px; color: #888; margin-top: 2px; }
+        .table-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
 
         .report-table { width: 100%; border-collapse: collapse; }
         .report-table thead th {
-            background: #f8faf8;
+            background: var(--color-surface-muted);
             padding: 10px 14px;
             text-align: left;
             font-size: 12px;
             font-weight: 600;
-            color: #555;
+            color: var(--color-text-secondary);
             text-transform: uppercase;
             letter-spacing: .4px;
-            border-bottom: 2px solid #e8f0e8;
+            border-bottom: 2px solid var(--color-primary-surface);
             white-space: nowrap;
         }
         .report-table thead th.center { text-align: center; }
-        .report-table tbody tr { border-bottom: 1px solid #f4f6f8; }
+        .report-table tbody tr { border-bottom: 1px solid var(--color-border); }
         .report-table tbody tr:last-child { border-bottom: none; }
-        .report-table tbody tr:hover { background: #f8fdf8; }
+        .report-table tbody tr:hover { background: var(--color-primary-surface); }
         .report-table tbody td { padding: 12px 14px; font-size: 14px; vertical-align: middle; }
         .report-table tbody td.center { text-align: center; }
         .report-table tfoot td {
             padding: 12px 14px;
             font-weight: 700;
             font-size: 14px;
-            background: #f8faf8;
-            border-top: 2px solid #e8f0e8;
+            background: var(--color-surface-muted);
+            border-top: 2px solid var(--color-primary-surface);
         }
         .report-table tfoot td.center { text-align: center; }
 
         /* Transportista cell */
         .t-avatar {
             width: 36px; height: 36px;
-            background: #e8f5e9;
-            color: #2d7a35;
+            background: var(--color-primary-surface);
+            color: var(--color-primary);
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
@@ -165,33 +171,33 @@
         }
         .t-info { display: flex; align-items: center; gap: 10px; }
         .t-name { font-weight: 600; font-size: 14px; }
-        .t-username { font-size: 11px; color: #888; }
+        .t-username { font-size: 11px; color: var(--color-text-muted); }
 
         /* Badges */
         .badge {
             display: inline-block;
             padding: 3px 10px;
-            border-radius: 20px;
+            border-radius: var(--radius-pill);
             font-size: 13px;
             font-weight: 600;
         }
-        .badge-despachar { background: #fff3cd; color: #856404; }
-        .badge-en-ruta   { background: #cff4fc; color: #0c5460; }
-        .badge-entregada { background: #d1e7dd; color: #0a5c36; }
-        .badge-rechazada { background: #f8d7da; color: #842029; }
-        .badge-total     { background: #e8f5e9; color: #2d7a35; }
+        .badge-despachar { background: var(--color-warning-bg); color: var(--color-warning-text); }
+        .badge-en-ruta   { background: var(--color-info-bg);    color: var(--color-info-text); }
+        .badge-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
+        .badge-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
+        .badge-total     { background: var(--color-primary-surface); color: var(--color-primary); }
 
         /* Tiempo */
         .time-cell { font-size: 13px; }
-        .time-avg { font-weight: 700; color: #1a1a2e; }
-        .time-range { font-size: 11px; color: #888; margin-top: 2px; }
-        .time-na { color: #bbb; font-size: 12px; }
+        .time-avg { font-weight: 700; color: var(--color-text); }
+        .time-range { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+        .time-na { color: var(--color-text-muted); font-size: 12px; }
 
         /* Empty state */
         .empty-state {
             padding: 60px 20px;
             text-align: center;
-            color: #999;
+            color: var(--color-text-muted);
         }
         .empty-icon { font-size: 40px; margin-bottom: 12px; }
 
@@ -226,9 +232,9 @@
 
     {% if messages %}
     {% for message in messages %}
-    <div style="background:{% if 'error' in message.tags %}#f8d7da{% else %}#d1e7dd{% endif %};
-                color:{% if 'error' in message.tags %}#842029{% else %}#0a5c36{% endif %};
-                padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px;">
+    <div style="background:{% if 'error' in message.tags %}var(--color-danger-bg){% else %}var(--color-success-bg){% endif %};
+                color:{% if 'error' in message.tags %}var(--color-danger-text){% else %}var(--color-success-text){% endif %};
+                padding:12px 16px; border-radius:var(--radius-sm); margin-bottom:16px; font-size:14px;">
         {{ message }}
     </div>
     {% endfor %}
@@ -324,28 +330,28 @@
                         {% if d.por_despachar %}
                         <span class="badge badge-despachar">{{ d.por_despachar }}</span>
                         {% else %}
-                        <span style="color:#ccc;">—</span>
+                        <span style="color:var(--color-text-muted);">—</span>
                         {% endif %}
                     </td>
                     <td class="center">
                         {% if d.en_ruta %}
                         <span class="badge badge-en-ruta">{{ d.en_ruta }}</span>
                         {% else %}
-                        <span style="color:#ccc;">—</span>
+                        <span style="color:var(--color-text-muted);">—</span>
                         {% endif %}
                     </td>
                     <td class="center">
                         {% if d.entregadas %}
                         <span class="badge badge-entregada">{{ d.entregadas }}</span>
                         {% else %}
-                        <span style="color:#ccc;">—</span>
+                        <span style="color:var(--color-text-muted);">—</span>
                         {% endif %}
                     </td>
                     <td class="center">
                         {% if d.rechazadas %}
                         <span class="badge badge-rechazada">{{ d.rechazadas }}</span>
                         {% else %}
-                        <span style="color:#ccc;">—</span>
+                        <span style="color:var(--color-text-muted);">—</span>
                         {% endif %}
                     </td>
                     <td class="center">
@@ -379,7 +385,7 @@
                     <td class="center"><span class="badge badge-en-ruta">{{ totals.en_ruta }}</span></td>
                     <td class="center"><span class="badge badge-entregada">{{ totals.entregadas }}</span></td>
                     <td class="center"><span class="badge badge-rechazada">{{ totals.rechazadas }}</span></td>
-                    <td class="center" colspan="2" style="color:#888; font-size:12px; font-weight:400;">
+                    <td class="center" colspan="2" style="color:var(--color-text-secondary); font-size:12px; font-weight:400;">
                         Tiempo calculado sobre guías con etapas completas
                     </td>
                 </tr>

@@ -8,29 +8,24 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Mis Guías — Irritec</title>
+    <link rel="stylesheet" href="{% static 'guides/css/design-system.css' %}">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --green: #2d7a35;
-            --green-dark: #1e5c28;
-            --green-light: #e8f5e9;
-            --green-mid: #a5d6a7;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f4f1;
+            font-family: var(--font-sans);
+            background: var(--color-bg);
             min-height: 100vh;
             padding-bottom: env(safe-area-inset-bottom, 16px);
+            line-height: 1.6;
         }
 
         /* Header */
         .header {
-            background: var(--green);
+            background: var(--color-primary-strong);
             padding: 16px 20px 14px;
             padding-top: calc(16px + env(safe-area-inset-top, 0px));
-            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            box-shadow: var(--shadow-md);
         }
 
         .header-top {
@@ -61,7 +56,7 @@
             color: #fff;
             border: 1px solid rgba(255,255,255,0.3);
             padding: 6px 12px;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 12px;
             font-weight: 700;
             text-decoration: none;
@@ -82,8 +77,8 @@
             font-weight: 700;
             color: rgba(255,255,255,0.65);
             text-decoration: none;
-            border-radius: 10px;
-            transition: background 0.2s, color 0.2s;
+            border-radius: var(--radius-md);
+            transition: background var(--transition-base), color var(--transition-base);
         }
 
         .tab.active {
@@ -96,15 +91,15 @@
 
         .alert {
             padding: 12px 16px;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             margin-bottom: 8px;
             font-size: 14px;
             font-weight: 500;
         }
 
-        .alert-success { background: #d1e7dd; color: #0f5132; }
-        .alert-error   { background: #f8d7da; color: #721c24; }
-        .alert-info    { background: #cfe2ff; color: #084298; }
+        .alert-success { background: var(--color-success-bg); color: var(--color-success-text); }
+        .alert-error   { background: var(--color-danger-bg);  color: var(--color-danger-text); }
+        .alert-info    { background: var(--color-info-bg);    color: var(--color-info-text); }
 
         /* Content */
         .content { padding: 14px 14px 24px; }
@@ -120,32 +115,32 @@
         .empty-title {
             font-size: 17px;
             font-weight: 700;
-            color: #444;
+            color: var(--color-text-secondary);
             margin-bottom: 8px;
         }
 
         .empty-text {
             font-size: 14px;
-            color: #888;
+            color: var(--color-text-muted);
             line-height: 1.5;
         }
 
         /* Guide card */
         .guide-card {
-            background: #fff;
-            border-radius: 14px;
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
             margin-bottom: 12px;
-            box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-sm);
             overflow: hidden;
-            border-left: 5px solid #ccc;
+            border-left: 5px solid var(--color-border-strong);
         }
 
-        .guide-card.estado-emitida  { border-left-color: #9e9e9e; }
-        .guide-card.estado-asignada { border-left-color: #f0a500; }
-        .guide-card.estado-en_ruta  { border-left-color: #1a56db; }
-        .guide-card.estado-entregada { border-left-color: var(--green); }
-        .guide-card.estado-rechazada { border-left-color: #dc3545; }
-        .guide-card.estado-cerrada   { border-left-color: #555; }
+        .guide-card.estado-emitida  { border-left-color: var(--color-neutral-text); }
+        .guide-card.estado-asignada { border-left-color: var(--color-warning-text); }
+        .guide-card.estado-en_ruta  { border-left-color: var(--color-info-text); }
+        .guide-card.estado-entregada { border-left-color: var(--color-primary); }
+        .guide-card.estado-rechazada { border-left-color: var(--color-danger); }
+        .guide-card.estado-cerrada   { border-left-color: var(--color-text-secondary); }
 
         .card-body { padding: 14px 16px 12px; }
 
@@ -159,30 +154,30 @@
         .guide-number {
             font-size: 16px;
             font-weight: 800;
-            color: #1a1a1a;
+            color: var(--color-text);
         }
 
         .guide-nv {
             font-size: 12px;
-            color: #999;
+            color: var(--color-text-muted);
             margin-top: 2px;
         }
 
         .status-badge {
             padding: 4px 10px;
-            border-radius: 20px;
+            border-radius: var(--radius-pill);
             font-size: 11px;
             font-weight: 800;
             white-space: nowrap;
             margin-top: 2px;
         }
 
-        .badge-emitida   { background: #f0f0f0; color: #666; }
-        .badge-asignada  { background: #fff3cd; color: #856404; }
-        .badge-en_ruta   { background: #dbeafe; color: #1d4ed8; }
-        .badge-entregada { background: var(--green-light); color: #1b5e20; }
-        .badge-rechazada { background: #fee2e2; color: #991b1b; }
-        .badge-cerrada   { background: #e5e7eb; color: #374151; }
+        .badge-emitida   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
+        .badge-asignada  { background: var(--color-warning-bg); color: var(--color-warning-text); }
+        .badge-en_ruta   { background: var(--color-info-bg);    color: var(--color-info-text); }
+        .badge-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
+        .badge-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
+        .badge-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
 
         /* Info rows */
         .info-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
@@ -197,18 +192,18 @@
 
         .info-text {
             font-size: 13px;
-            color: #444;
+            color: var(--color-text-secondary);
             line-height: 1.4;
         }
 
-        .info-text strong { color: #1a1a1a; font-weight: 600; }
+        .info-text strong { color: var(--color-text); font-weight: 600; }
 
         /* Despacho highlight */
         .despacho-pill {
             display: inline-block;
-            background: #fff8e1;
-            color: #856404;
-            border: 1px solid #ffe082;
+            background: var(--color-warning-bg);
+            color: var(--color-warning-text);
+            border: 1px solid var(--color-warning-bg);
             padding: 2px 9px;
             border-radius: 6px;
             font-size: 12px;
@@ -219,9 +214,9 @@
         .card-actions {
             display: flex;
             gap: 8px;
-            border-top: 1px solid #f0f0f0;
+            border-top: 1px solid var(--color-border);
             padding: 10px 16px;
-            background: #fafafa;
+            background: var(--color-surface-muted);
         }
 
         .btn-main {
@@ -229,33 +224,33 @@
             display: block;
             text-align: center;
             padding: 12px;
-            background: var(--green);
-            color: #fff;
-            border-radius: 10px;
+            background: var(--color-primary-strong);
+            color: var(--color-text-on-primary);
+            border-radius: var(--radius-md);
             font-size: 14px;
             font-weight: 800;
             text-decoration: none;
-            transition: background 0.2s;
+            transition: background var(--transition-base);
         }
 
-        .btn-main:active { background: var(--green-dark); }
+        .btn-main:active { background: var(--color-primary-dark); }
 
         .btn-map {
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 12px 16px;
-            background: #f0f0f0;
-            color: #333;
-            border-radius: 10px;
+            background: var(--color-surface-muted);
+            color: var(--color-text);
+            border-radius: var(--radius-md);
             font-size: 13px;
             font-weight: 700;
             text-decoration: none;
-            transition: background 0.2s;
+            transition: background var(--transition-base);
             white-space: nowrap;
         }
 
-        .btn-map:active { background: #e0e0e0; }
+        .btn-map:active { background: var(--color-border); }
     </style>
 </head>
 <body>

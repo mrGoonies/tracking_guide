@@ -38,13 +38,13 @@
       '<div style="background:#111;padding:18px 20px 36px;' +
                   'display:flex;align-items:center;justify-content:space-between;gap:14px;">' +
         '<button id="irCamClose" type="button" ' +
-                'style="flex:1;padding:13px 8px;background:#2d7a35;color:#fff;border:none;' +
+                'style="flex:1;padding:13px 8px;background:var(--color-primary-strong);color:#fff;border:none;' +
                        'border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">' +
           'Listo' +
         '</button>' +
         '<button id="irCamCapture" type="button" ' +
                 'style="width:72px;height:72px;border-radius:50%;background:#fff;' +
-                       'border:5px solid #2d7a35;font-size:28px;cursor:pointer;' +
+                       'border:5px solid var(--color-primary-strong);font-size:28px;cursor:pointer;' +
                        'flex-shrink:0;display:flex;align-items:center;justify-content:center;">' +
           '&#128247;' +
         '</button>' +
@@ -117,7 +117,7 @@
       var thumb = document.createElement('img');
       thumb.src = URL.createObjectURL(blob);
       thumb.style.cssText =
-        'width:52px;height:52px;object-fit:cover;border-radius:6px;border:2px solid #2d7a35;';
+        'width:52px;height:52px;object-fit:cover;border-radius:6px;border:2px solid var(--color-primary-strong);';
       document.getElementById('irCamThumbs').appendChild(thumb);
 
       photoCount++;

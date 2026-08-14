@@ -1,62 +1,64 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asignar Guías — Irritec</title>
+    <link rel="stylesheet" href="{% static 'guides/css/design-system.css' %}">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f8; color: #1a1a2e; min-height: 100vh; }
+        body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); min-height: 100vh; line-height: 1.6; }
 
-        .topbar { background: #2d7a35; color: #fff; display: flex; align-items: center; gap: 12px; padding: 0 24px; height: 56px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+        .topbar { background: var(--color-primary-strong); color: #fff; display: flex; align-items: center; gap: 12px; padding: 0 var(--space-6); height: 56px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
         .topbar-back { color: rgba(255,255,255,.85); text-decoration: none; font-size: 20px; }
         .topbar-back:hover { color: #fff; }
         .topbar-title { font-size: 17px; font-weight: 700; }
 
-        .container { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
 
-        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
-        .alert-success { background: #d1e7dd; color: #0a5c36; }
-        .alert-error   { background: #f8d7da; color: #842029; }
+        .alert { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 14px; }
+        .alert-success { background: var(--color-success-bg); color: var(--color-success-text); }
+        .alert-error   { background: var(--color-danger-bg);  color: var(--color-danger-text); }
 
         /* Selector de transportista */
-        .selector-card { background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 20px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+        .selector-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-sm); margin-bottom: 20px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
         .selector-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 220px; }
-        .selector-group label { font-size: 13px; font-weight: 600; color: #444; }
-        .selector-group select { padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; color: #1a1a2e; background: #fff; }
-        .btn-sel { padding: 10px 24px; background: #2d7a35; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-        .btn-sel:hover { background: #1e5c28; }
+        .selector-group label { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); }
+        .selector-group select { padding: 10px 14px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); font-size: 15px; color: var(--color-text); background: var(--color-surface); }
+        .btn-sel { padding: 10px 24px; background: var(--color-primary-strong); color: var(--color-text-on-primary); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background var(--transition-base); }
+        .btn-sel:hover { background: var(--color-primary-dark); }
 
         /* Tabla de guías */
-        .table-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
-        .table-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .table-card { background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+        .table-header { padding: 16px 20px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .table-title { font-size: 15px; font-weight: 700; }
-        .table-sub { font-size: 12px; color: #888; margin-top: 2px; }
+        .table-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
 
         .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .btn-check-all { padding: 7px 14px; background: #f4f6f8; border: 1px solid #ddd; border-radius: 7px; font-size: 13px; cursor: pointer; }
-        .btn-assign { padding: 9px 22px; background: #2d7a35; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
-        .btn-assign:hover { background: #1e5c28; }
-        .btn-assign:disabled { background: #aaa; cursor: not-allowed; }
-        .selected-count { font-size: 13px; color: #2d7a35; font-weight: 600; }
+        .btn-check-all { padding: 7px 14px; background: var(--color-surface-muted); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; }
+        .btn-assign { padding: 9px 22px; background: var(--color-primary-strong); color: var(--color-text-on-primary); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; transition: background var(--transition-base); }
+        .btn-assign:hover { background: var(--color-primary-dark); }
+        .btn-assign:disabled { background: var(--color-text-muted); cursor: not-allowed; }
+        .selected-count { font-size: 13px; color: var(--color-primary); font-weight: 600; }
 
         .guide-table { width: 100%; border-collapse: collapse; }
-        .guide-table thead th { background: #f8faf8; padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .4px; border-bottom: 2px solid #e8f0e8; white-space: nowrap; }
-        .guide-table tbody tr { border-bottom: 1px solid #f4f6f8; transition: background .1s; }
+        .guide-table thead th { background: var(--color-surface-muted); padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .4px; border-bottom: 2px solid var(--color-primary-surface); white-space: nowrap; }
+        .guide-table tbody tr { border-bottom: 1px solid var(--color-border); transition: background .1s; }
         .guide-table tbody tr:last-child { border-bottom: none; }
-        .guide-table tbody tr:hover { background: #f8fdf8; }
-        .guide-table tbody tr.selected { background: #e8f5e9; }
+        .guide-table tbody tr:hover { background: var(--color-primary-surface); }
+        .guide-table tbody tr.selected { background: var(--color-primary-surface-strong); }
         .guide-table tbody td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
 
-        .guide-table input[type=checkbox] { width: 16px; height: 16px; accent-color: #2d7a35; cursor: pointer; }
+        .guide-table input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--color-primary-strong); cursor: pointer; }
 
-        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-        .badge-emitida  { background: #e3f0ff; color: #1a56db; }
-        .badge-asignada { background: #e8f5e9; color: #2d7a35; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 600; }
+        .badge-emitida  { background: var(--color-accent-blue-surface); color: var(--color-accent-blue-text); }
+        .badge-asignada { background: var(--color-primary-surface); color: var(--color-primary); }
 
-        .t-assigned { font-size: 12px; color: #888; font-style: italic; }
+        .t-assigned { font-size: 12px; color: var(--color-text-secondary); font-style: italic; }
 
-        .empty-state { padding: 48px 20px; text-align: center; color: #aaa; font-size: 15px; }
+        .empty-state { padding: 48px 20px; text-align: center; color: var(--color-text-muted); font-size: 15px; }
 
         @media (max-width: 640px) {
             .guide-table thead th:nth-child(n+5) { display: none; }
@@ -106,7 +108,7 @@
                 <div>
                     <div class="table-title">
                         Guías pendientes de asignación
-                        <span style="color:#2d7a35; font-size:14px; font-weight:400;">
+                        <span style="color:var(--color-primary); font-size:14px; font-weight:400;">
                             — asignando a <strong>{{ transportista_sel.get_full_name|default:transportista_sel.username }}</strong>
                         </span>
                     </div>
@@ -153,7 +155,7 @@
                             {% if guide.transportista %}
                             <span class="t-assigned">{{ guide.transportista.get_full_name|default:guide.transportista.username }}</span>
                             {% else %}
-                            <span style="color:#bbb; font-size:12px;">Sin asignar</span>
+                            <span style="color:var(--color-text-muted); font-size:12px;">Sin asignar</span>
                             {% endif %}
                         </td>
                     </tr>

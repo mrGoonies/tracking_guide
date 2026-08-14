@@ -1,34 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Guía #{{ guide.numero_guia }} — Irritec</title>
+    <link rel="stylesheet" href="{% static 'guides/css/design-system.css' %}">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --green: #2d7a35;
-            --green-dark: #1e5c28;
-            --green-light: #e8f5e9;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f4f1;
+            font-family: var(--font-sans);
+            background: var(--color-bg);
             min-height: 100vh;
             padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+            line-height: 1.6;
         }
 
         /* Header */
         .header {
-            background: var(--green);
+            background: var(--color-primary-strong);
             padding: 14px 20px 14px;
             padding-top: calc(14px + env(safe-area-inset-top, 0px));
-            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            box-shadow: var(--shadow-md);
         }
 
         .header-row {
@@ -46,7 +43,7 @@
             font-size: 14px;
             font-weight: 700;
             padding: 6px 12px;
-            border-radius: 9px;
+            border-radius: var(--radius-sm);
             background: rgba(255,255,255,0.15);
         }
 
@@ -73,25 +70,25 @@
 
         .alert {
             padding: 12px 16px;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             margin-bottom: 8px;
             font-size: 14px;
             font-weight: 500;
         }
 
-        .alert-success { background: #d1e7dd; color: #0f5132; }
-        .alert-error   { background: #f8d7da; color: #721c24; }
+        .alert-success { background: var(--color-success-bg); color: var(--color-success-text); }
+        .alert-error   { background: var(--color-danger-bg);  color: var(--color-danger-text); }
 
         /* Content */
         .content { padding: 14px; }
 
         /* Cards */
         .card {
-            background: #fff;
-            border-radius: 14px;
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
             padding: 18px;
             margin-bottom: 12px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+            box-shadow: var(--shadow-sm);
         }
 
         .card-title {
@@ -99,10 +96,10 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            color: var(--green);
+            color: var(--color-primary);
             margin-bottom: 14px;
             padding-bottom: 10px;
-            border-bottom: 1px solid var(--green-light);
+            border-bottom: 1px solid var(--color-primary-surface);
         }
 
         /* Info rows */
@@ -122,7 +119,7 @@
 
         .info-label {
             font-size: 11px;
-            color: #aaa;
+            color: var(--color-text-muted);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.4px;
@@ -131,13 +128,13 @@
 
         .info-value {
             font-size: 15px;
-            color: #1a1a1a;
+            color: var(--color-text);
             font-weight: 600;
             line-height: 1.4;
         }
 
         .info-value a {
-            color: var(--green);
+            color: var(--color-primary);
             text-decoration: none;
             font-weight: 700;
         }
@@ -145,17 +142,17 @@
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
-            border-radius: 20px;
+            border-radius: var(--radius-pill);
             font-size: 12px;
             font-weight: 800;
         }
 
-        .badge-emitida   { background: #f0f0f0; color: #666; }
-        .badge-asignada  { background: #fff3cd; color: #856404; }
-        .badge-en_ruta   { background: #dbeafe; color: #1d4ed8; }
-        .badge-entregada { background: var(--green-light); color: #1b5e20; }
-        .badge-rechazada { background: #fee2e2; color: #991b1b; }
-        .badge-cerrada   { background: #e5e7eb; color: #374151; }
+        .badge-emitida   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
+        .badge-asignada  { background: var(--color-warning-bg); color: var(--color-warning-text); }
+        .badge-en_ruta   { background: var(--color-info-bg);    color: var(--color-info-text); }
+        .badge-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
+        .badge-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
+        .badge-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
 
         /* Quick action buttons */
         .quick-actions {
@@ -169,23 +166,23 @@
 
         .btn-quick {
             padding: 16px 12px;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             font-size: 15px;
             font-weight: 800;
             border: none;
             cursor: pointer;
             text-align: center;
-            transition: opacity 0.15s, transform 0.1s;
+            transition: opacity 150ms ease, transform 100ms ease;
             line-height: 1.2;
         }
 
         .btn-quick:active { opacity: 0.8; transform: scale(0.97); }
 
-        .btn-quick-en_ruta   { background: #dbeafe; color: #1d4ed8; }
-        .btn-quick-asignada  { background: #fff3cd; color: #856404; }
-        .btn-quick-entregada { background: var(--green-light); color: #1b5e20; }
-        .btn-quick-rechazada { background: #fee2e2; color: #991b1b; }
-        .btn-quick-cerrada   { background: #e5e7eb; color: #374151; }
+        .btn-quick-en_ruta   { background: var(--color-info-bg);    color: var(--color-info-text); }
+        .btn-quick-asignada  { background: var(--color-warning-bg); color: var(--color-warning-text); }
+        .btn-quick-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
+        .btn-quick-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
+        .btn-quick-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
 
         /* Form fields */
         .field { margin-bottom: 16px; }
@@ -195,7 +192,7 @@
             display: block;
             font-size: 13px;
             font-weight: 700;
-            color: #444;
+            color: var(--color-text-secondary);
             margin-bottom: 8px;
         }
 
@@ -203,21 +200,21 @@
         .field textarea {
             width: 100%;
             padding: 13px 14px;
-            border: 1.5px solid #d1d5db;
-            border-radius: 12px;
+            border: 1.5px solid var(--color-border-strong);
+            border-radius: var(--radius-lg);
             font-size: 16px;
             font-family: inherit;
-            color: #1a1a1a;
-            background: #fafafa;
+            color: var(--color-text);
+            background: var(--color-surface-muted);
             outline: none;
             -webkit-appearance: none;
-            transition: border-color 0.2s;
+            transition: border-color var(--transition-base);
         }
 
         .field select:focus,
         .field textarea:focus {
-            border-color: var(--green);
-            background: #fff;
+            border-color: var(--color-primary);
+            background: var(--color-surface);
         }
 
         .field textarea { resize: none; min-height: 90px; }
@@ -238,19 +235,19 @@
             justify-content: center;
             gap: 10px;
             padding: 28px 16px;
-            border: 2.5px dashed #a5d6a7;
-            border-radius: 14px;
-            background: #f8fdf8;
+            border: 2.5px dashed var(--color-primary-border);
+            border-radius: var(--radius-lg);
+            background: var(--color-primary-surface);
             cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
+            transition: border-color var(--transition-base), background var(--transition-base);
             text-align: center;
         }
 
-        .photo-label:active { background: var(--green-light); }
+        .photo-label:active { background: var(--color-primary-surface-strong); }
 
         .photo-label.has-file {
-            border-color: var(--green);
-            background: var(--green-light);
+            border-color: var(--color-primary);
+            background: var(--color-primary-surface-strong);
         }
 
         .photo-icon { font-size: 36px; }
@@ -258,17 +255,17 @@
         .photo-label-title {
             font-size: 15px;
             font-weight: 800;
-            color: var(--green);
+            color: var(--color-primary);
         }
 
         .photo-label-hint {
             font-size: 12px;
-            color: #888;
+            color: var(--color-text-secondary);
         }
 
         .photo-filename {
             font-size: 13px;
-            color: var(--green);
+            color: var(--color-primary);
             font-weight: 700;
             word-break: break-all;
         }
@@ -277,26 +274,26 @@
         .btn-submit {
             width: 100%;
             padding: 17px;
-            background: var(--green);
-            color: #fff;
+            background: var(--color-primary-strong);
+            color: var(--color-text-on-primary);
             border: none;
-            border-radius: 14px;
+            border-radius: var(--radius-lg);
             font-size: 17px;
             font-weight: 800;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: background var(--transition-base), transform 100ms ease;
             letter-spacing: 0.2px;
         }
 
-        .btn-submit:active { background: var(--green-dark); transform: scale(0.98); }
+        .btn-submit:active { background: var(--color-primary-dark); transform: scale(0.98); }
 
         /* Final state */
         .final-state {
             text-align: center;
             padding: 28px 16px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            color: #666;
+            background: var(--color-surface-muted);
+            border-radius: var(--radius-lg);
+            color: var(--color-text-secondary);
             font-size: 15px;
             font-weight: 500;
         }
@@ -313,7 +310,7 @@
             top: 8px;
             bottom: 8px;
             width: 2px;
-            background: #e0e0e0;
+            background: var(--color-border);
         }
 
         .tl-item { position: relative; margin-bottom: 20px; }
@@ -326,15 +323,15 @@
             width: 13px;
             height: 13px;
             border-radius: 50%;
-            border: 2px solid #fff;
+            border: 2px solid var(--color-surface);
         }
 
-        .dot-emitida   { background: #9e9e9e; box-shadow: 0 0 0 2px #9e9e9e; }
-        .dot-asignada  { background: #f0a500; box-shadow: 0 0 0 2px #f0a500; }
-        .dot-en_ruta   { background: #1a56db; box-shadow: 0 0 0 2px #1a56db; }
-        .dot-entregada { background: var(--green); box-shadow: 0 0 0 2px var(--green); }
-        .dot-rechazada { background: #dc3545; box-shadow: 0 0 0 2px #dc3545; }
-        .dot-cerrada   { background: #555; box-shadow: 0 0 0 2px #555; }
+        .dot-emitida   { background: var(--color-neutral-text); box-shadow: 0 0 0 2px var(--color-neutral-text); }
+        .dot-asignada  { background: var(--color-warning-text); box-shadow: 0 0 0 2px var(--color-warning-text); }
+        .dot-en_ruta   { background: var(--color-info-text);    box-shadow: 0 0 0 2px var(--color-info-text); }
+        .dot-entregada { background: var(--color-primary);      box-shadow: 0 0 0 2px var(--color-primary); }
+        .dot-rechazada { background: var(--color-danger);       box-shadow: 0 0 0 2px var(--color-danger); }
+        .dot-cerrada   { background: var(--color-text-secondary); box-shadow: 0 0 0 2px var(--color-text-secondary); }
 
         .tl-header {
             display: flex;
@@ -344,22 +341,21 @@
             flex-wrap: wrap;
         }
 
-        .tl-time { font-size: 12px; color: #aaa; }
+        .tl-time { font-size: 12px; color: var(--color-text-muted); }
 
         .tl-obs {
             font-size: 13px;
-            color: #555;
+            color: var(--color-text-secondary);
             line-height: 1.5;
             margin-bottom: 8px;
         }
 
         .tl-photo img {
             max-width: 100%;
-            border-radius: 10px;
-            border: 1px solid #e0e0e0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
         }
     </style>
-    {% load static %}
     <script src="{% static 'guides/js/camera.js' %}" defer></script>
 </head>
 <body>
@@ -470,8 +466,8 @@
                 </div>
 
                 <div class="field" id="photoWrapper" style="display:none;">
-                    <label>Fotos de evidencia <span style="color:#dc3545;">*</span></label>
-                    <p style="font-size:12px; color:#666; margin:-4px 0 10px;">
+                    <label>Fotos de evidencia <span style="color:var(--color-danger-text);">*</span></label>
+                    <p style="font-size:12px; color:var(--color-text-secondary); margin:-4px 0 10px;">
                         La <strong>primera foto</strong> debe ser la guía de despacho firmada
                         (se envía por correo en PDF). Las siguientes son evidencia adicional.
                     </p>
@@ -487,11 +483,11 @@
                     <!-- Botón principal: tomar foto -->
                     <button type="button" id="btnOpenCamera"
                             style="display:block; width:100%; padding:18px 8px; margin-top:8px;
-                                   background:#2d7a35; color:#fff; border:none; border-radius:12px;
+                                   background:var(--color-primary-strong); color:var(--color-text-on-primary); border:none; border-radius:var(--radius-lg);
                                    font-size:17px; font-weight:700; cursor:pointer; letter-spacing:.3px;">
                         Tomar foto
                     </button>
-                    <p style="font-size:11px; color:#888; text-align:center; margin:5px 0 12px;">
+                    <p style="font-size:11px; color:var(--color-text-secondary); text-align:center; margin:5px 0 12px;">
                         Puedes sacar varias fotos seguidas sin cerrar la cámara
                     </p>
 
@@ -499,8 +495,8 @@
                     <button type="button"
                             onclick="document.getElementById('galleryPicker').click()"
                             style="display:block; width:100%; padding:12px 8px;
-                                   background:#f4f6f8; color:#444; border:1px solid #ddd;
-                                   border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">
+                                   background:var(--color-surface-muted); color:var(--color-text-secondary); border:1px solid var(--color-border-strong);
+                                   border-radius:var(--radius-md); font-size:14px; font-weight:600; cursor:pointer;">
                         Adjuntar foto existente
                     </button>
 
@@ -508,11 +504,11 @@
                     <div id="photoPreviewList"
                          style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;"></div>
                     <p id="photoCount"
-                       style="font-size:12px; color:#2d7a35; font-weight:600; margin:6px 0 0; display:none;"></p>
+                       style="font-size:12px; color:var(--color-primary); font-weight:600; margin:6px 0 0; display:none;"></p>
                 </div>
 
                 <div class="field">
-                    <label>Observaciones <span style="color:#888; font-weight:400;">(opcional)</span></label>
+                    <label>Observaciones <span style="color:var(--color-text-secondary); font-weight:400;">(opcional)</span></label>
                     {{ form.notas }}
                 </div>
 
@@ -552,7 +548,7 @@
                         {% for p in stage.fotos.all %}
                         <a href="{{ p.foto.url }}" target="_blank">
                             <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}"
-                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #ddd;">
+                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border);">
                         </a>
                         {% endfor %}
                     </div>
@@ -616,12 +612,12 @@
                     wrap.style.cssText = 'position:relative;width:80px;height:80px;';
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #2d7a35;';
+                    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--color-primary);';
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.textContent = '✕';
                     btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:22px;height:22px;' +
-                        'border-radius:50%;background:#dc3545;color:#fff;border:none;font-size:12px;cursor:pointer;';
+                        'border-radius:50%;background:var(--color-danger);color:#fff;border:none;font-size:12px;cursor:pointer;';
                     btn.onclick = function () { removePhoto(idx); };
                     wrap.appendChild(img);
                     wrap.appendChild(btn);

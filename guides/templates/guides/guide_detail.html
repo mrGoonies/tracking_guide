@@ -1,27 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guía #{{ guide.numero_guia }} — Irritec</title>
+    <link rel="stylesheet" href="{% static 'guides/css/design-system.css' %}">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f0f4f1;
+            font-family: var(--font-sans);
+            background: var(--color-bg);
             min-height: 100vh;
+            line-height: 1.6;
         }
 
         /* Topbar */
         .topbar {
-            background: #2d7a35;
-            padding: 0 24px;
+            background: var(--color-primary-strong);
+            padding: 0 var(--space-6);
             height: 56px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            box-shadow: var(--shadow-sm);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -35,9 +38,9 @@
             font-size: 13px;
             font-weight: 600;
             padding: 5px 10px;
-            border-radius: 7px;
+            border-radius: var(--radius-sm);
             background: rgba(255,255,255,0.12);
-            transition: background 0.2s;
+            transition: background var(--transition-base);
         }
         .topbar-back:hover { background: rgba(255,255,255,0.22); }
 
@@ -47,7 +50,7 @@
         /* Status pill in topbar */
         .topbar-status {
             padding: 3px 10px;
-            border-radius: 20px;
+            border-radius: var(--radius-pill);
             font-size: 11px;
             font-weight: 700;
             background: rgba(255,255,255,0.2);
@@ -58,7 +61,7 @@
         .main {
             max-width: 800px;
             margin: 0 auto;
-            padding: 24px 20px 48px;
+            padding: var(--space-5) var(--space-5) var(--space-8);
         }
 
         /* Messages */
@@ -66,22 +69,22 @@
 
         .alert {
             padding: 12px 16px;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             font-size: 14px;
             margin-bottom: 8px;
         }
 
-        .alert-success { background: #d1e7dd; color: #0f5132; }
-        .alert-error   { background: #f8d7da; color: #721c24; }
-        .alert-info    { background: #cfe2ff; color: #084298; }
+        .alert-success { background: var(--color-success-bg); color: var(--color-success-text); }
+        .alert-error   { background: var(--color-danger-bg); color: var(--color-danger-text); }
+        .alert-info    { background: var(--color-info-bg); color: var(--color-info-text); }
 
         /* Section card */
         .section {
-            background: #fff;
-            border-radius: 14px;
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
             padding: 22px 24px;
             margin-bottom: 16px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            box-shadow: var(--shadow-sm);
         }
 
         .section-title {
@@ -89,10 +92,10 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.7px;
-            color: #2d7a35;
+            color: var(--color-primary);
             margin-bottom: 18px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #e8f5e9;
+            border-bottom: 1px solid var(--color-primary-surface);
         }
 
         /* Info grid */
@@ -111,18 +114,18 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.4px;
-            color: #aaa;
+            color: var(--color-text-muted);
         }
 
         .info-value {
             font-size: 14px;
-            color: #1a1a1a;
+            color: var(--color-text);
             font-weight: 500;
             line-height: 1.4;
         }
 
         .info-value a {
-            color: #2d7a35;
+            color: var(--color-primary);
             text-decoration: none;
             font-weight: 600;
         }
@@ -133,17 +136,17 @@
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
-            border-radius: 20px;
+            border-radius: var(--radius-pill);
             font-size: 12px;
             font-weight: 700;
         }
 
-        .badge-emitida   { background: #f5f5f5;  color: #666; }
-        .badge-asignada  { background: #fff3cd;  color: #856404; }
-        .badge-en_ruta   { background: #cfe2ff;  color: #084298; }
-        .badge-entregada { background: #d1e7dd;  color: #0f5132; }
-        .badge-rechazada { background: #f8d7da;  color: #721c24; }
-        .badge-cerrada   { background: #e2e3e5;  color: #41464b; }
+        .badge-emitida   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
+        .badge-asignada  { background: var(--color-warning-bg); color: var(--color-warning-text); }
+        .badge-en_ruta   { background: var(--color-info-bg);    color: var(--color-info-text); }
+        .badge-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
+        .badge-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
+        .badge-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
 
         /* Quick actions */
         .quick-actions {
@@ -155,30 +158,30 @@
 
         .btn-quick {
             padding: 10px 20px;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             font-size: 14px;
             font-weight: 700;
             border: none;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: background var(--transition-base), transform 100ms ease;
         }
 
         .btn-quick:active { transform: scale(0.97); }
 
-        .btn-quick-en_ruta   { background: #cfe2ff; color: #084298; }
-        .btn-quick-en_ruta:hover { background: #b6d4fe; }
+        .btn-quick-en_ruta   { background: var(--color-info-bg); color: var(--color-info-text); }
+        .btn-quick-en_ruta:hover { filter: brightness(0.94); }
 
-        .btn-quick-asignada  { background: #fff3cd; color: #856404; }
-        .btn-quick-asignada:hover { background: #ffe69c; }
+        .btn-quick-asignada  { background: var(--color-warning-bg); color: var(--color-warning-text); }
+        .btn-quick-asignada:hover { filter: brightness(0.94); }
 
-        .btn-quick-entregada { background: #d1e7dd; color: #0f5132; }
-        .btn-quick-entregada:hover { background: #b7dfca; }
+        .btn-quick-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
+        .btn-quick-entregada:hover { filter: brightness(0.94); }
 
-        .btn-quick-rechazada { background: #f8d7da; color: #721c24; }
-        .btn-quick-rechazada:hover { background: #f1aeb5; }
+        .btn-quick-rechazada { background: var(--color-danger-bg); color: var(--color-danger-text); }
+        .btn-quick-rechazada:hover { filter: brightness(0.94); }
 
-        .btn-quick-cerrada   { background: #e2e3e5; color: #41464b; }
-        .btn-quick-cerrada:hover { background: #c8cbcf; }
+        .btn-quick-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
+        .btn-quick-cerrada:hover { filter: brightness(0.94); }
 
         /* Update form */
         .field { margin-bottom: 18px; }
@@ -188,7 +191,7 @@
             display: block;
             font-size: 13px;
             font-weight: 600;
-            color: #444;
+            color: var(--color-text-secondary);
             margin-bottom: 6px;
         }
 
@@ -197,22 +200,22 @@
         .field input[type="file"] {
             width: 100%;
             padding: 11px 14px;
-            border: 1.5px solid #d1d5db;
-            border-radius: 10px;
+            border: 1.5px solid var(--color-border-strong);
+            border-radius: var(--radius-md);
             font-size: 14px;
             font-family: inherit;
-            color: #1a1a1a;
-            background: #fafafa;
+            color: var(--color-text);
+            background: var(--color-surface-muted);
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color var(--transition-base), box-shadow var(--transition-base);
             -webkit-appearance: none;
         }
 
         .field select:focus,
         .field textarea:focus {
-            border-color: #2d7a35;
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(45,122,53,0.10);
+            border-color: var(--color-primary);
+            background: var(--color-surface);
+            box-shadow: 0 0 0 3px var(--color-primary-surface-strong);
         }
 
         .field textarea { resize: vertical; min-height: 80px; }
@@ -224,48 +227,48 @@
             justify-content: center;
             gap: 8px;
             padding: 24px;
-            border: 2px dashed #a5d6a7;
-            border-radius: 10px;
-            background: #f8fdf8;
+            border: 2px dashed var(--color-primary-border);
+            border-radius: var(--radius-md);
+            background: var(--color-primary-surface);
             cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
+            transition: border-color var(--transition-base), background var(--transition-base);
             text-align: center;
         }
 
-        .file-label:hover { border-color: #2d7a35; background: #e8f5e9; }
+        .file-label:hover { border-color: var(--color-primary); background: var(--color-primary-surface-strong); }
 
         .file-label input[type="file"] {
             display: none;
         }
 
         .file-label-icon { font-size: 28px; }
-        .file-label-text { font-size: 14px; font-weight: 600; color: #2d7a35; }
-        .file-label-hint { font-size: 12px; color: #888; }
-        .file-name { font-size: 13px; color: #2d7a35; font-weight: 600; display: none; }
+        .file-label-text { font-size: 14px; font-weight: 600; color: var(--color-primary); }
+        .file-label-hint { font-size: 12px; color: var(--color-text-secondary); }
+        .file-name { font-size: 13px; color: var(--color-primary); font-weight: 600; display: none; }
 
         .btn-submit {
             width: 100%;
             padding: 14px;
-            background: #2d7a35;
-            color: #fff;
+            background: var(--color-primary-strong);
+            color: var(--color-text-on-primary);
             border: none;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: background var(--transition-base), transform 100ms ease;
             margin-top: 4px;
         }
 
-        .btn-submit:hover  { background: #235f29; }
+        .btn-submit:hover  { background: var(--color-primary-dark); }
         .btn-submit:active { transform: scale(0.99); }
 
         .final-state-msg {
             text-align: center;
             padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            color: #666;
+            background: var(--color-surface-muted);
+            border-radius: var(--radius-md);
+            color: var(--color-text-secondary);
             font-size: 14px;
         }
 
@@ -279,7 +282,7 @@
             top: 8px;
             bottom: 8px;
             width: 2px;
-            background: #e0e0e0;
+            background: var(--color-border);
         }
 
         .timeline-item {
@@ -296,17 +299,17 @@
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 2px #ccc;
-            background: #ccc;
+            border: 2px solid var(--color-surface);
+            box-shadow: 0 0 0 2px var(--color-border-strong);
+            background: var(--color-border-strong);
         }
 
-        .dot-emitida   { background: #9e9e9e; box-shadow: 0 0 0 2px #9e9e9e; }
-        .dot-asignada  { background: #f0a500; box-shadow: 0 0 0 2px #f0a500; }
-        .dot-en_ruta   { background: #1a56db; box-shadow: 0 0 0 2px #1a56db; }
-        .dot-entregada { background: #2d7a35; box-shadow: 0 0 0 2px #2d7a35; }
-        .dot-rechazada { background: #dc3545; box-shadow: 0 0 0 2px #dc3545; }
-        .dot-cerrada   { background: #555;    box-shadow: 0 0 0 2px #555; }
+        .dot-emitida   { background: var(--color-neutral-text); box-shadow: 0 0 0 2px var(--color-neutral-text); }
+        .dot-asignada  { background: var(--color-warning-text); box-shadow: 0 0 0 2px var(--color-warning-text); }
+        .dot-en_ruta   { background: var(--color-info-text);    box-shadow: 0 0 0 2px var(--color-info-text); }
+        .dot-entregada { background: var(--color-primary);      box-shadow: 0 0 0 2px var(--color-primary); }
+        .dot-rechazada { background: var(--color-danger);       box-shadow: 0 0 0 2px var(--color-danger); }
+        .dot-cerrada   { background: var(--color-text-secondary); box-shadow: 0 0 0 2px var(--color-text-secondary); }
 
         .timeline-header {
             display: flex;
@@ -318,13 +321,13 @@
 
         .timeline-time {
             font-size: 12px;
-            color: #aaa;
+            color: var(--color-text-muted);
             font-weight: 500;
         }
 
         .timeline-obs {
             font-size: 13px;
-            color: #555;
+            color: var(--color-text-secondary);
             line-height: 1.5;
             margin-bottom: 8px;
         }
@@ -332,8 +335,8 @@
         .timeline-photo img {
             max-width: 100%;
             max-height: 260px;
-            border-radius: 10px;
-            border: 1px solid #e0e0e0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
             object-fit: cover;
         }
 
@@ -442,11 +445,11 @@
         {% if request.user.is_staff %}
         <div style="text-align:right; margin-bottom:12px;">
             <a href="{% url 'confirm_delete_guide' guide.id %}"
-               style="display:inline-block; padding:8px 18px; background:#fde8e8; color:#b91c1c;
-                      border-radius:8px; font-size:13px; font-weight:700; text-decoration:none;
-                      border:1px solid #fecaca; transition:background 0.2s;"
-               onmouseover="this.style.background='#fecaca'"
-               onmouseout="this.style.background='#fde8e8'">
+               style="display:inline-block; padding:8px 18px; background:var(--color-danger-bg); color:var(--color-danger-text);
+                      border-radius:var(--radius-sm); font-size:13px; font-weight:700; text-decoration:none;
+                      border:1px solid var(--color-danger-bg); transition:background var(--transition-base);"
+               onmouseover="this.style.filter='brightness(0.95)'"
+               onmouseout="this.style.filter=''">
                 Eliminar guía
             </a>
         </div>
@@ -474,13 +477,13 @@
                     <label for="{{ form.nuevo_estado.id_for_label }}">Estado</label>
                     {{ form.nuevo_estado }}
                     {% if form.nuevo_estado.errors %}
-                    <div style="font-size:12px; color:#c0392b; margin-top:5px;">{{ form.nuevo_estado.errors.0 }}</div>
+                    <div style="font-size:12px; color:var(--color-danger-text); margin-top:5px;">{{ form.nuevo_estado.errors.0 }}</div>
                     {% endif %}
                 </div>
 
                 <div class="field" id="photoWrapper" style="display:none;">
-                    <label>Evidencia Fotográfica <span style="color:#c0392b;">*</span></label>
-                    <p style="font-size:12px; color:#666; margin:-2px 0 10px;">
+                    <label>Evidencia Fotográfica <span style="color:var(--color-danger-text);">*</span></label>
+                    <p style="font-size:12px; color:var(--color-text-secondary); margin:-2px 0 10px;">
                         La <strong>primera foto</strong> debe ser la guía de despacho firmada
                         (se envía por correo en PDF al vendedor y coordinadores). Las siguientes
                         son evidencia adicional (cliente, productos, etc).
@@ -492,25 +495,25 @@
 
                     <button type="button" id="btnOpenCamera"
                             style="display:block; width:100%; padding:16px 8px; margin-top:8px;
-                                   background:#2d7a35; color:#fff; border:none; border-radius:10px;
+                                   background:var(--color-primary-strong); color:var(--color-text-on-primary); border:none; border-radius:var(--radius-md);
                                    font-size:16px; font-weight:700; cursor:pointer;">
                         Tomar foto
                     </button>
-                    <p style="font-size:11px; color:#888; text-align:center; margin:5px 0 12px;">
+                    <p style="font-size:11px; color:var(--color-text-secondary); text-align:center; margin:5px 0 12px;">
                         Puedes sacar varias fotos seguidas sin cerrar la cámara
                     </p>
 
                     <button type="button" onclick="document.getElementById('galleryPicker').click()"
                             style="display:block; width:100%; padding:11px 8px;
-                                   background:#f4f6f8; color:#444; border:1px solid #ddd;
-                                   border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                                   background:var(--color-surface-muted); color:var(--color-text-secondary); border:1px solid var(--color-border-strong);
+                                   border-radius:var(--radius-sm); font-size:14px; font-weight:600; cursor:pointer;">
                         Adjuntar foto existente
                     </button>
 
                     <div id="photoPreviewList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;"></div>
-                    <p id="photoCount" style="font-size:12px; color:#2d7a35; font-weight:600; margin:6px 0 0; display:none;"></p>
+                    <p id="photoCount" style="font-size:12px; color:var(--color-primary); font-weight:600; margin:6px 0 0; display:none;"></p>
                     {% if form.evidencia_foto.errors %}
-                    <div style="font-size:12px; color:#c0392b; margin-top:5px;">{{ form.evidencia_foto.errors.0 }}</div>
+                    <div style="font-size:12px; color:var(--color-danger-text); margin-top:5px;">{{ form.evidencia_foto.errors.0 }}</div>
                     {% endif %}
                 </div>
 
@@ -552,7 +555,7 @@
                         {% for p in stage.fotos.all %}
                         <a href="{{ p.foto.url }}" target="_blank">
                             <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}"
-                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #ddd;">
+                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border);">
                         </a>
                         {% endfor %}
                     </div>
@@ -615,12 +618,12 @@
                     wrap.style.cssText = 'position:relative;width:80px;height:80px;';
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #2d7a35;';
+                    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--color-primary);';
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.textContent = '✕';
                     btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:22px;height:22px;' +
-                        'border-radius:50%;background:#dc3545;color:#fff;border:none;font-size:12px;cursor:pointer;';
+                        'border-radius:50%;background:var(--color-danger);color:#fff;border:none;font-size:12px;cursor:pointer;';
                     btn.onclick = function () { removePhoto(idx); };
                     wrap.appendChild(img);
                     wrap.appendChild(btn);
