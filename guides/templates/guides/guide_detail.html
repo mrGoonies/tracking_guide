@@ -473,13 +473,6 @@
             <form method="post" enctype="multipart/form-data" id="updateForm">
                 {% csrf_token %}
 
-                <div class="field">
-                    <label for="{{ form.nuevo_estado.id_for_label }}">Estado</label>
-                    {{ form.nuevo_estado }}
-                    {% if form.nuevo_estado.errors %}
-                    <div style="font-size:12px; color:var(--color-danger-text); margin-top:5px;">{{ form.nuevo_estado.errors.0 }}</div>
-                    {% endif %}
-                </div>
 
                 <div class="field" id="photoWrapper" style="display:none;">
                     <label>Evidencia Fotográfica <span style="color:var(--color-danger-text);">*</span></label>
