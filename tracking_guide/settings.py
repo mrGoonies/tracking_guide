@@ -175,7 +175,7 @@ LOGGING = {
     'loggers': {
         'guides': {
             'handlers': ['console'],
-            'level': 'ERROR',
+            'level': 'WARNING',
             'propagate': False,
         },
     },

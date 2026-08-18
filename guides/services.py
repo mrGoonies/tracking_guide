@@ -223,9 +223,9 @@ def send_seller_notification(guide, pdf_bytes=None):
         return
 
     if not (guide.vendedor and guide.vendedor.email):
-        logger.info(
-            '[Notificación Vendedor] Sin email de vendedor configurado. guia=%s',
-            guide.numero_guia,
+        logger.warning(
+            '[Notificación Vendedor] Sin email de vendedor configurado (vendedor=%s, vendedor_nombre=%s). guia=%s',
+            guide.vendedor_id, guide.vendedor_nombre, guide.numero_guia,
         )
         return
 
