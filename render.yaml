@@ -20,6 +20,22 @@ services:
       - key: CLOUDINARY_URL
         sync: false
 
+  - type: cron
+    name: cerrar-guias-vencidas
+    env: python
+    schedule: "0 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py cerrar_guias_vencidas
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tracking-guide-db
+          property: connectionString
+
 databases:
   - name: tracking-guide-db
     databaseName: tracking_guide
