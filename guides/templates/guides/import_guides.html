@@ -142,6 +142,15 @@
             </div>
         </div>
         {% endif %}
+
+        {% if result.reingresadas %}
+        <div class="info-box" style="margin-top:16px;">
+            <strong>{{ result.reingresadas|length }} guía(s) rechazadas reingresaron al flujo activo</strong> (estaban en estado Rechazada y volvieron a aparecer en el ERP):
+            <div style="margin-top:6px;">
+                {% for numero in result.reingresadas %}<code style="margin:2px;">{{ numero }}</code>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <a href="{% url 'import_guides_excel' %}"

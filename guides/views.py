@@ -903,9 +903,11 @@ def _process_sheet(ws, omitir_cr, actualizar):
         creadas = len(created)
 
     # ── Bulk update guías existentes ─────────────────────────────────────
+    reingresadas = []  # numero_guia de guías rechazadas que vuelven al flujo activo
     if updates_pendientes:
         guias_qs = list(DispatchGuide.objects.filter(numero_guia__in=updates_pendientes.keys()))
         changed_fields = set()
+        stages_reingreso = []  # GuideStage a crear por reingreso de guías rechazadas
         for guide in guias_qs:
             data = updates_pendientes[guide.numero_guia]
             for field in ('nv', 'nv_fecha_creacion', 'fecha_envio', 'fecha_despacho',
@@ -919,6 +921,18 @@ def _process_sheet(ws, omitir_cr, actualizar):
                 if guide.estado == 'emitida':
                     guide.estado = 'asignada'
                     changed_fields.add('estado')
+            # Guía rechazada que reaparece en el ERP: se reingresa al flujo activo
+            # (asignada si ya tiene transportista, emitida si no) en vez de quedar
+            # archivada para siempre en 'rechazada'.
+            if guide.estado == 'rechazada':
+                guide.estado = 'asignada' if guide.transportista else 'emitida'
+                changed_fields.add('estado')
+                reingresadas.append(guide.numero_guia)
+                stages_reingreso.append(GuideStage(
+                    guia=guide,
+                    estado=guide.estado,
+                    observaciones='Reingresada al flujo por reimportación desde ERP (estado anterior: rechazada)',
+                ))
             # No se pisa un link cargado manualmente: solo se completa si estaba vacío
             if data.get('map_link') and not guide.map_link:
                 guide.map_link = data['map_link']
@@ -927,6 +941,8 @@ def _process_sheet(ws, omitir_cr, actualizar):
                 sin_link.append(guide.numero_guia)
         if changed_fields:
             DispatchGuide.objects.bulk_update(guias_qs, fields=list(changed_fields), batch_size=200)
+        if stages_reingreso:
+            GuideStage.objects.bulk_create(stages_reingreso, batch_size=200)
         actualizadas = len(guias_qs)
 
     return {
@@ -937,6 +953,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
         'total': creadas + actualizadas + omitidas_cr + len(errores),
         'sin_link': sin_link,
         'tipo_pedido_col_encontrada': tipo_pedido_col_encontrada,
+        'reingresadas': reingresadas,
     }, None
 
 
