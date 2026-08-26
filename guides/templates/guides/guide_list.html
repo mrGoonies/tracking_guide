@@ -223,6 +223,11 @@
             transform: translateY(-1px);
         }
 
+        .guide-card:focus-visible {
+            outline: 3px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
         .guide-card.estado-emitida  { border-left-color: var(--color-neutral-text); }
         .guide-card.estado-asignada { border-left-color: var(--color-warning-text); }
         .guide-card.estado-en_ruta  { border-left-color: var(--color-info-text); }
@@ -590,7 +595,11 @@
         <div class="cards">
             {% for guide in guides %}
             <div class="guide-card estado-{{ guide.estado }}"
-                 onclick="window.location='{% url 'guide_detail' guide.id %}'">
+                 role="link"
+                 tabindex="0"
+                 aria-label="Ver guía #{{ guide.numero_guia }}, {{ guide.cliente.nombre }}, {{ guide.get_estado_display }}"
+                 onclick="window.location='{% url 'guide_detail' guide.id %}'"
+                 onkeydown="if (event.key === 'Enter' && event.target === this) { window.location='{% url 'guide_detail' guide.id %}'; }">
                 <div class="card-main">
 
                     <div class="card-top">
