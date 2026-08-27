@@ -734,7 +734,12 @@ def _process_sheet(ws, omitir_cr, actualizar):
         User.objects.filter(groups__name='Transportista')
                     .only('id', 'first_name', 'last_name', 'username')
     )
-    guias_existentes  = set(DispatchGuide.objects.values_list('numero_guia', flat=True))
+    guias_existentes  = set()
+    guias_rechazadas  = set()   # numero_guia actualmente en estado 'rechazada'
+    for numero, estado in DispatchGuide.objects.values_list('numero_guia', 'estado'):
+        guias_existentes.add(numero)
+        if estado == 'rechazada':
+            guias_rechazadas.add(numero)
     numeros_eliminados = set(DeletedGuideNumber.objects.values_list('numero_guia', flat=True))
 
     # ── Única pasada sobre la hoja ───────────────────────────────────────
@@ -750,6 +755,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
     guides_nuevas  = []   # objetos DispatchGuide para bulk_create
     estados_nuevas = []   # estado inicial de cada guía nueva (mismo orden)
     updates_pendientes = {}  # {numero_guia: {campo: valor}}
+    rechazadas_sin_actualizar = []  # numero_guia rechazadas reaparecidas sin marcar "Actualizar existentes"
 
     for raw_row in ws.iter_rows(values_only=True):
         row_num += 1
@@ -854,6 +860,10 @@ def _process_sheet(ws, omitir_cr, actualizar):
                     'transportista': transportista,
                     'map_link': map_link,
                 }
+            elif numero_guia in guias_rechazadas:
+                # Guía rechazada que reaparece en el ERP pero el usuario no marcó
+                # "Actualizar existentes": no se reingresa al flujo, se le avisa.
+                rechazadas_sin_actualizar.append(numero_guia)
             continue
 
         # ── Guía nueva ───────────────────────────────────────────────────
@@ -954,6 +964,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
         'sin_link': sin_link,
         'tipo_pedido_col_encontrada': tipo_pedido_col_encontrada,
         'reingresadas': reingresadas,
+        'rechazadas_sin_actualizar': rechazadas_sin_actualizar,
     }, None
 
 

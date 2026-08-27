@@ -151,6 +151,15 @@
             </div>
         </div>
         {% endif %}
+
+        {% if result.rechazadas_sin_actualizar %}
+        <div class="info-box" style="margin-top:16px;">
+            <strong>{{ result.rechazadas_sin_actualizar|length }} guía(s) se encuentran Rechazadas</strong> y volvieron a aparecer en el archivo, pero no fueron reingresadas al flujo activo porque no seleccionaste el checkbox <strong>"Actualizar existentes"</strong>. Si quieres que vuelvan a estado Emitida/Asignada, vuelve a importar el archivo marcando esa opción:
+            <div style="margin-top:6px;">
+                {% for numero in result.rechazadas_sin_actualizar %}<code style="margin:2px;">{{ numero }}</code>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <a href="{% url 'import_guides_excel' %}"
