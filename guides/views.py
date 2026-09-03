@@ -818,7 +818,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
         nv_fecha    = _parse_date(get('creacion'))
         fecha_envio = _parse_date(get('fecha_envio'))
         fecha_desp  = _parse_date(get('despacho'))
-        map_link    = _extract_maps_link(get('tipo_pedido'))
+        map_link    = _extract_maps_link(get('tipo_pedido')) or _extract_maps_link(referencia)
 
         creado_por_raw = str(get('creado_por') or '').strip()
         vendedor_obj = vendedor_nombre = None
