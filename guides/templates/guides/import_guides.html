@@ -143,6 +143,15 @@
         </div>
         {% endif %}
 
+        {% if result.clientes_pendientes %}
+        <div class="info-box" style="margin-top:16px;">
+            <strong>{{ result.clientes_pendientes|length }} guía(s) se importaron con un RUT que no existía en el sistema</strong>: se creó automáticamente un cliente "(Pendiente de completar)" para no bloquear la importación. Completa nombre y dirección de esos clientes desde la pantalla de Clientes:
+            <div style="margin-top:6px;">
+                {% for numero in result.clientes_pendientes %}<code style="margin:2px;">{{ numero }}</code>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         {% if result.reingresadas %}
         <div class="info-box" style="margin-top:16px;">
             <strong>{{ result.reingresadas|length }} guía(s) rechazadas reingresaron al flujo activo</strong> (estaban en estado Rechazada y volvieron a aparecer en el ERP):

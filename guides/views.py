@@ -751,6 +751,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
 
     creadas = actualizadas = omitidas_cr = 0
     errores = []
+    clientes_pendientes = []  # numero_guia importadas con un RUT que no existía en el sistema
     sin_link = []   # numero_guia de guías importadas/actualizadas sin link de Maps
     guides_nuevas  = []   # objetos DispatchGuide para bulk_create
     estados_nuevas = []   # estado inicial de cada guía nueva (mismo orden)
@@ -809,10 +810,19 @@ def _process_sheet(ws, omitir_cr, actualizar):
             errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': 'RUT cliente vacío'})
             continue
 
-        cliente = clientes_map.get(str(rut_raw).strip())
+        rut_cliente = str(rut_raw).strip()
+        cliente = clientes_map.get(rut_cliente)
         if not cliente:
-            errores.append({'fila': row_num, 'guia': numero_guia, 'motivo': f'RUT {rut_raw} no existe en el sistema'})
-            continue
+            # RUT no registrado: se crea un cliente pendiente de completar en vez de
+            # bloquear la importación de la guía. El staff completa nombre/dirección
+            # después desde la pantalla de clientes.
+            cliente = Client.objects.create(
+                rut=rut_cliente,
+                nombre='(Pendiente de completar)',
+                direccion_facturacion='',
+            )
+            clientes_map[rut_cliente] = cliente
+            clientes_pendientes.append(numero_guia)
 
         nv          = str(get('nv') or '').strip() or None
         nv_fecha    = _parse_date(get('creacion'))
@@ -961,6 +971,7 @@ def _process_sheet(ws, omitir_cr, actualizar):
         'omitidas_cr': omitidas_cr,
         'errores': errores,
         'total': creadas + actualizadas + omitidas_cr + len(errores),
+        'clientes_pendientes': clientes_pendientes,
         'sin_link': sin_link,
         'tipo_pedido_col_encontrada': tipo_pedido_col_encontrada,
         'reingresadas': reingresadas,
