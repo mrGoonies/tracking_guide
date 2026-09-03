@@ -260,6 +260,85 @@ def send_seller_notification(guide, pdf_bytes=None):
         )
 
 
+def send_weekly_transportista_summary(zip_bytes, *, week_start, week_end, resumen):
+    """
+    Envía a LOGISTICS_EMAIL el resumen semanal de guías entregadas, agrupadas
+    por transportista, para su facturación. `zip_bytes` es un ZIP con una
+    carpeta por transportista conteniendo el PDF firmado de cada guía.
+    `resumen` es una lista de dicts {'transportista', 'cantidad', 'sin_pdf'}
+    (sin_pdf: números de guía sin PDF de respaldo, no incluidos en el ZIP)
+    usada para armar el cuerpo del correo. No lanza excepciones.
+    """
+    to_email = getattr(settings, 'LOGISTICS_EMAIL', '')
+    if not to_email:
+        logger.warning('[Resumen Semanal] LOGISTICS_EMAIL no configurado, no se envía el correo.')
+        return False
+
+    client = _get_mandrill_client()
+    if not client:
+        logger.warning('[Resumen Semanal] Mandrill no disponible (credenciales ausentes).')
+        return False
+
+    total = sum(r['cantidad'] for r in resumen)
+    rango = f"{week_start.strftime('%d/%m/%Y')} – {week_end.strftime('%d/%m/%Y')}"
+    subject = f'Resumen semanal de guías entregadas ({rango})'
+
+    filas_html = ''.join(
+        f'<tr><td style="padding:6px 10px;border-bottom:1px solid #e0e0e0;">{r["transportista"]}</td>'
+        f'<td style="padding:6px 10px;border-bottom:1px solid #e0e0e0;text-align:center;">{r["cantidad"]}</td></tr>'
+        for r in resumen
+    )
+
+    faltantes = [(r['transportista'], numero) for r in resumen for numero in r.get('sin_pdf', [])]
+    sin_pdf_html = ''
+    if faltantes:
+        items = ''.join(f'<li>{t} — guía {g}</li>' for t, g in faltantes)
+        sin_pdf_html = (
+            '<h3 style="margin-top:24px;font-size:14px;color:#c0392b;">'
+            'Guías sin PDF de respaldo (no incluidas en el ZIP)</h3>'
+            f'<ul style="font-size:13px;color:#555;">{items}</ul>'
+        )
+
+    html_body = f"""
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+      <div style="background:#2d7a35;padding:16px 24px;">
+        <h2 style="color:#fff;margin:0;">Guías entregadas — {rango}</h2>
+      </div>
+      <div style="padding:24px;border:1px solid #e0e0e0;border-top:none;">
+        <p>Se adjunta un ZIP con una carpeta por transportista, con el PDF firmado
+        de cada guía entregada durante la semana (para facturación semanal).</p>
+        <table style="border-collapse:collapse;width:100%;font-size:14px;margin-top:16px;">
+          <tr>
+            <th style="text-align:left;padding:6px 10px;border-bottom:2px solid #2d7a35;">Transportista</th>
+            <th style="text-align:center;padding:6px 10px;border-bottom:2px solid #2d7a35;">Guías entregadas</th>
+          </tr>
+          {filas_html}
+        </table>
+        <p style="margin-top:16px;"><strong>Total: {total} guía(s)</strong></p>
+        {sin_pdf_html}
+      </div>
+    </div>
+    """
+
+    attachment = {
+        'type': 'application/zip',
+        'name': f'guias_entregadas_{week_start.strftime("%Y%m%d")}_{week_end.strftime("%Y%m%d")}.zip',
+        'content': base64.b64encode(zip_bytes).decode('ascii'),
+    }
+
+    sent = _send_message(
+        client,
+        to=[{'email': to_email, 'type': 'to'}],
+        subject=subject,
+        html_body=html_body,
+        guide_numero='resumen-semanal',
+        attachments=[attachment],
+    )
+    if sent:
+        logger.info('[Resumen Semanal] Enviado a %s. total_guias=%d', to_email, total)
+    return sent
+
+
 def send_coordinator_notification(guide, pdf_bytes=None):
     """
     Notifica a todos los usuarios activos del grupo 'Coordinador' que tengan
