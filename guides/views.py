@@ -354,11 +354,16 @@ def guide_detail(request, guide_id):
         messages.error(request, 'Guía no encontrada')
         return redirect(get_home_url_for_user(request.user))
 
+    # Solo admin, coordinador o transportista tienen algún tipo de acceso a guías
+    if not (request.user.is_staff or is_coordinador(request.user) or is_transportista(request.user)):
+        messages.error(request, 'No tienes permisos para acceder a esta guía.')
+        return redirect(get_home_url_for_user(request.user))
+
     # Transportista solo puede acceder a sus propias guías
     if is_transportista(request.user) and guide.transportista != request.user:
         messages.error(request, 'No tienes acceso a esta guía.')
         return redirect('transportista_guides')
-    
+
     stages = guide.etapas.order_by('-timestamp')
     
     next_state_map = {
