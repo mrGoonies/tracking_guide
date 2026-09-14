@@ -777,11 +777,16 @@
                         dirEl.title = data.direccion;
                     }
                     if (mapsEl) {
-                        if (data.map_link) {
-                            mapsEl.innerHTML = '<a href="' + data.map_link + '" target="_blank" rel="noopener" ' +
-                                'class="maps-link" onclick="event.stopPropagation();">📍 Ver en Google Maps</a>';
-                        } else {
-                            mapsEl.innerHTML = '';
+                        mapsEl.innerHTML = '';
+                        if (data.map_link && /^https?:\/\//i.test(data.map_link)) {
+                            var mapsLink = document.createElement('a');
+                            mapsLink.href = data.map_link;
+                            mapsLink.target = '_blank';
+                            mapsLink.rel = 'noopener';
+                            mapsLink.className = 'maps-link';
+                            mapsLink.textContent = '📍 Ver en Google Maps';
+                            mapsLink.addEventListener('click', function(event) { event.stopPropagation(); });
+                            mapsEl.appendChild(mapsLink);
                         }
                     }
                     document.getElementById('addressModal').classList.remove('open');

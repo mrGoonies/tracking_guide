@@ -293,8 +293,11 @@ def create_guide(request):
                 guide.direccion_entrega = direccion_entrega
             
             if map_link:
-                guide.map_link = map_link
-            
+                if _is_valid_map_link(map_link):
+                    guide.map_link = map_link
+                else:
+                    messages.warning(request, 'El link de mapa ingresado no es una URL válida (debe comenzar con http:// o https://) y no se guardó.')
+
             if not admin_session:
                 guide.vendedor_nombre = None
             guide.usa_direccion_facturacion = usa_direccion_facturacion
@@ -642,6 +645,11 @@ def _find_col(headers, candidates):
 
 
 _URL_RE = re.compile(r'https?://\S+')
+
+
+def _is_valid_map_link(value):
+    """Solo acepta URLs http(s) — bloquea esquemas como javascript: que ejecutarían código al hacer clic."""
+    return bool(_URL_RE.match(value))
 
 
 def _extract_maps_link(value):
@@ -1063,6 +1071,9 @@ def update_guide_address(request, guide_id):
 
     if not direccion:
         return JsonResponse({'error': 'La dirección no puede estar vacía.'}, status=400)
+
+    if map_link and not _is_valid_map_link(map_link):
+        return JsonResponse({'error': 'El link de mapa debe ser una URL http:// o https:// válida.'}, status=400)
 
     guide.direccion_entrega = direccion
     guide.map_link = map_link or None
