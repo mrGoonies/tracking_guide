@@ -18,6 +18,7 @@
             min-height: 100vh;
             padding-bottom: env(safe-area-inset-bottom, 16px);
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
         /* Header */
@@ -33,17 +34,20 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 14px;
+            gap: 8px;
         }
 
         .brand { height: 34px; width: auto; background: #fff; padding: 3px 8px; border-radius: 5px; }
 
         .user-info { text-align: right; }
+        .header-top > div { min-width: 0; }
 
         .user-name {
             font-size: 13px;
             font-weight: 700;
             color: #fff;
             display: block;
+            overflow-wrap: anywhere;
         }
 
         .user-role {
@@ -55,12 +59,16 @@
             background: rgba(255,255,255,0.18);
             color: #fff;
             border: 1px solid rgba(255,255,255,0.3);
-            padding: 6px 12px;
+            min-height: 44px;
+            padding: 10px 12px;
             border-radius: var(--radius-sm);
             font-size: 12px;
             font-weight: 700;
             text-decoration: none;
             margin-left: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Tab bar */
@@ -72,13 +80,17 @@
         .tab {
             flex: 1;
             text-align: center;
-            padding: 9px 0;
+            min-height: 44px;
+            padding: 11px 8px;
             font-size: 13px;
             font-weight: 700;
             color: rgba(255,255,255,0.65);
             text-decoration: none;
             border-radius: var(--radius-md);
             transition: background var(--transition-base), color var(--transition-base);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .tab.active {
@@ -133,6 +145,7 @@
             box-shadow: var(--shadow-sm);
             overflow: hidden;
             border-left: 5px solid var(--color-border-strong);
+            min-width: 0;
         }
 
         .guide-card.estado-emitida  { border-left-color: var(--color-neutral-text); }
@@ -194,6 +207,8 @@
             font-size: 13px;
             color: var(--color-text-secondary);
             line-height: 1.4;
+            min-width: 0;
+            overflow-wrap: anywhere;
         }
 
         .info-text strong { color: var(--color-text); font-weight: 600; }
@@ -231,6 +246,7 @@
             font-weight: 800;
             text-decoration: none;
             transition: background var(--transition-base);
+            min-height: 44px;
         }
 
         .btn-main:active { background: var(--color-primary-dark); }
@@ -248,6 +264,14 @@
             text-decoration: none;
             transition: background var(--transition-base);
             white-space: nowrap;
+            min-height: 44px;
+        }
+
+        @media (max-width: 340px) {
+            .header { padding-left: 14px; padding-right: 14px; }
+            .user-name { max-width: 112px; }
+            .card-actions { padding-left: 12px; padding-right: 12px; }
+            .btn-map { padding-left: 12px; padding-right: 12px; }
         }
 
         .btn-map:active { background: var(--color-border); }
@@ -267,14 +291,16 @@
             </div>
         </div>
 
-        <div class="tabs">
-            <a href="?filtro=activas" class="tab {% if filtro == 'activas' %}active{% endif %}">
+        <nav class="tabs" aria-label="Filtrar guías">
+            <a href="?filtro=activas" class="tab {% if filtro == 'activas' %}active{% endif %}"
+               {% if filtro == 'activas' %}aria-current="page"{% endif %}>
                 Pendientes
             </a>
-            <a href="?filtro=cerradas" class="tab {% if filtro == 'cerradas' %}active{% endif %}">
+            <a href="?filtro=cerradas" class="tab {% if filtro == 'cerradas' %}active{% endif %}"
+               {% if filtro == 'cerradas' %}aria-current="page"{% endif %}>
                 Historial
             </a>
-        </div>
+        </nav>
     </div>
 
     {% if messages %}
@@ -304,16 +330,16 @@
 
                     <div class="info-list">
                         <div class="info-row">
-                            <span class="info-icon">🏢</span>
+                            <span class="info-icon" aria-hidden="true">🏢</span>
                             <span class="info-text"><strong>{{ guide.cliente.nombre }}</strong></span>
                         </div>
                         <div class="info-row">
-                            <span class="info-icon">📍</span>
+                            <span class="info-icon" aria-hidden="true">📍</span>
                             <span class="info-text">{{ guide.direccion_entrega }}</span>
                         </div>
                         {% if guide.fecha_despacho %}
                         <div class="info-row">
-                            <span class="info-icon">📅</span>
+                            <span class="info-icon" aria-hidden="true">📅</span>
                             <span class="info-text">
                                 <span class="despacho-pill">{{ guide.fecha_despacho|date:"d/m/Y" }}</span>
                             </span>
@@ -321,7 +347,7 @@
                         {% endif %}
                         {% if guide.notas %}
                         <div class="info-row">
-                            <span class="info-icon">💬</span>
+                            <span class="info-icon" aria-hidden="true">💬</span>
                             <span class="info-text">{{ guide.notas }}</span>
                         </div>
                         {% endif %}
@@ -333,7 +359,10 @@
                         {% if filtro == 'activas' %}Actualizar Estado{% else %}Ver Detalle{% endif %}
                     </a>
                     {% if guide.map_link %}
-                    <a href="{{ guide.map_link }}" target="_blank" class="btn-map">📍 Mapa</a>
+                    <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
+                       class="btn-map" aria-label="Abrir mapa de la guía {{ guide.numero_guia }} en una pestaña nueva">
+                        <span aria-hidden="true">📍</span>&nbsp;Mapa
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -341,7 +370,7 @@
 
         {% else %}
             <div class="empty">
-                <div class="empty-icon">{% if filtro == 'activas' %}📭{% else %}✅{% endif %}</div>
+                <div class="empty-icon" aria-hidden="true">{% if filtro == 'activas' %}📭{% else %}✅{% endif %}</div>
                 <div class="empty-title">
                     {% if filtro == 'activas' %}Sin entregas pendientes{% else %}Sin historial aún{% endif %}
                 </div>

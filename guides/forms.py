@@ -87,16 +87,23 @@ class CreateDispatchGuideForm(forms.ModelForm):
 
 class UpdateGuideStateForm(forms.Form):
     """Formulario para actualizar el estado de una guía con evidencia fotográfica."""
+    operation_id = forms.UUIDField(widget=forms.HiddenInput())
+
     nuevo_estado = forms.ChoiceField(
         label='Nuevo Estado',
-        choices=DispatchGuide.STATUS_CHOICES,
+        choices=(),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
-    evidencia_foto = forms.ImageField(
-        label='Evidencia Fotográfica',
+    foto_guia = forms.FileField(
+        label='Foto de la guía de despacho firmada',
         required=False,
         widget=forms.FileInput(attrs={'accept': 'image/*', 'capture': 'environment', 'class': 'form-input'})
+    )
+
+    fotos_evidencia = forms.FileField(
+        label='Fotos de evidencia',
+        required=False,
     )
 
     notas = forms.CharField(
@@ -108,6 +115,19 @@ class UpdateGuideStateForm(forms.Form):
             'class': 'form-textarea'
         })
     )
+
+    def __init__(self, *args, guide=None, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if guide is not None and user is not None:
+            from .workflows import allowed_state_choices
+            self.fields['nuevo_estado'].choices = [
+                ('', 'Selecciona un nuevo estado'),
+                *allowed_state_choices(guide, user),
+            ]
+        else:
+            self.fields['nuevo_estado'].choices = [
+                ('', 'Selecciona un nuevo estado'),
+            ]
 
 
 class ImportDispatchExcelForm(forms.Form):

@@ -18,6 +18,7 @@
             min-height: 100vh;
             padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
         /* Header */
@@ -32,6 +33,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 8px;
         }
 
         .btn-back {
@@ -42,19 +44,26 @@
             text-decoration: none;
             font-size: 14px;
             font-weight: 700;
-            padding: 6px 12px;
+            min-height: 44px;
+            padding: 10px 12px;
             border-radius: var(--radius-sm);
             background: rgba(255,255,255,0.15);
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .header-guide {
             text-align: center;
+            min-width: 0;
         }
 
         .header-guide-num {
             font-size: 16px;
             font-weight: 800;
             color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .header-guide-status {
@@ -89,6 +98,7 @@
             padding: 18px;
             margin-bottom: 12px;
             box-shadow: var(--shadow-sm);
+            min-width: 0;
         }
 
         .card-title {
@@ -115,7 +125,7 @@
             margin-top: 1px;
         }
 
-        .info-content {}
+        .info-content { min-width: 0; }
 
         .info-label {
             font-size: 11px;
@@ -131,12 +141,16 @@
             color: var(--color-text);
             font-weight: 600;
             line-height: 1.4;
+            overflow-wrap: anywhere;
         }
 
         .info-value a {
             color: var(--color-primary);
             text-decoration: none;
             font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
         }
 
         .status-badge {
@@ -154,35 +168,39 @@
         .badge-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
         .badge-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
 
-        /* Quick action buttons */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 18px;
-        }
-
-        .quick-actions.single { grid-template-columns: 1fr; }
-
-        .btn-quick {
-            padding: 16px 12px;
+        .state-options { display: grid; gap: 10px; margin-bottom: 18px; }
+        .state-option input { position: absolute; opacity: 0; pointer-events: none; }
+        .state-option label {
+            display: block;
+            min-height: 48px;
+            padding: 13px 16px;
+            border: 2px solid var(--color-border-strong);
             border-radius: var(--radius-lg);
+            background: var(--color-surface);
+            color: var(--color-text);
             font-size: 15px;
             font-weight: 800;
-            border: none;
             cursor: pointer;
-            text-align: center;
-            transition: opacity 150ms ease, transform 100ms ease;
-            line-height: 1.2;
         }
-
-        .btn-quick:active { opacity: 0.8; transform: scale(0.97); }
-
-        .btn-quick-en_ruta   { background: var(--color-info-bg);    color: var(--color-info-text); }
-        .btn-quick-asignada  { background: var(--color-warning-bg); color: var(--color-warning-text); }
-        .btn-quick-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
-        .btn-quick-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
-        .btn-quick-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
+        .state-option input:checked + label {
+            border-color: var(--color-primary);
+            background: var(--color-primary-surface);
+            color: var(--color-primary);
+        }
+        .state-option input:focus-visible + label {
+            outline: 3px solid var(--color-primary-border);
+            outline-offset: 2px;
+        }
+        .form-error-summary {
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            border: 1px solid var(--color-danger);
+            border-radius: var(--radius-md);
+            background: var(--color-danger-bg);
+            color: var(--color-danger-text);
+            font-size: 13px;
+        }
+        .field-error { font-size: 12px; color: var(--color-danger-text); margin-top: 5px; }
 
         /* Form fields */
         .field { margin-bottom: 16px; }
@@ -355,6 +373,21 @@
             border-radius: var(--radius-md);
             border: 1px solid var(--color-border);
         }
+
+        .photo-link {
+            display: inline-flex;
+            min-width: 80px;
+            min-height: 80px;
+            border-radius: var(--radius-md);
+        }
+
+        @media (max-width: 340px) {
+            .header { padding-left: 12px; padding-right: 12px; }
+            .brand { height: 30px; padding-left: 5px; padding-right: 5px; }
+            .btn-back { padding-left: 9px; padding-right: 9px; }
+            .content { padding-left: 10px; padding-right: 10px; }
+            .card { padding: 16px 14px; }
+        }
     </style>
     <script src="{% static 'guides/js/camera.js' %}" defer></script>
 </head>
@@ -362,7 +395,9 @@
 
     <div class="header">
         <div class="header-row">
-            <a href="{% url 'transportista_guides' %}" class="btn-back">← Volver</a>
+            <a href="{% url 'transportista_guides' %}" class="btn-back">
+                <span aria-hidden="true">←</span> Volver
+            </a>
             <div class="header-guide">
                 <div class="header-guide-num">Guía #{{ guide.numero_guia }}</div>
                 <div class="header-guide-status">{{ guide.get_estado_display }}</div>
@@ -386,14 +421,14 @@
             <div class="card-title">Información de entrega</div>
             <div class="info-list">
                 <div class="info-row">
-                    <span class="info-icon">🏢</span>
+                    <span class="info-icon" aria-hidden="true">🏢</span>
                     <div class="info-content">
                         <div class="info-label">Cliente</div>
                         <div class="info-value">{{ guide.cliente.nombre }}</div>
                     </div>
                 </div>
                 <div class="info-row">
-                    <span class="info-icon">📍</span>
+                    <span class="info-icon" aria-hidden="true">📍</span>
                     <div class="info-content">
                         <div class="info-label">Dirección</div>
                         <div class="info-value">{{ guide.direccion_entrega }}</div>
@@ -401,18 +436,21 @@
                 </div>
                 {% if guide.map_link %}
                 <div class="info-row">
-                    <span class="info-icon">🗺️</span>
+                    <span class="info-icon" aria-hidden="true">🗺️</span>
                     <div class="info-content">
                         <div class="info-label">Mapa</div>
                         <div class="info-value">
-                            <a href="{{ guide.map_link }}" target="_blank">Abrir en Google Maps →</a>
+                            <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
+                               aria-label="Abrir ubicación de la guía {{ guide.numero_guia }} en Google Maps, en una pestaña nueva">
+                                Abrir en Google Maps <span aria-hidden="true">→</span>
+                            </a>
                         </div>
                     </div>
                 </div>
                 {% endif %}
                 {% if guide.fecha_despacho %}
                 <div class="info-row">
-                    <span class="info-icon">📅</span>
+                    <span class="info-icon" aria-hidden="true">📅</span>
                     <div class="info-content">
                         <div class="info-label">Fecha de despacho</div>
                         <div class="info-value">{{ guide.fecha_despacho|date:"d/m/Y" }}</div>
@@ -420,7 +458,7 @@
                 </div>
                 {% endif %}
                 <div class="info-row">
-                    <span class="info-icon">📋</span>
+                    <span class="info-icon" aria-hidden="true">📋</span>
                     <div class="info-content">
                         <div class="info-label">Estado actual</div>
                         <div class="info-value">
@@ -432,7 +470,7 @@
                 </div>
                 {% if guide.notas %}
                 <div class="info-row">
-                    <span class="info-icon">💬</span>
+                    <span class="info-icon" aria-hidden="true">💬</span>
                     <div class="info-content">
                         <div class="info-label">Instrucciones</div>
                         <div class="info-value">{{ guide.notas }}</div>
@@ -447,72 +485,93 @@
         <div class="card">
             <div class="card-title">Registrar cambio de estado</div>
 
-            <div class="quick-actions {% if next_states|length == 1 %}single{% endif %}">
-                {% for estado_valor, estado_label in next_states %}
-                <button type="button"
-                        class="btn-quick btn-quick-{{ estado_valor }}"
-                        onclick="setEstado('{{ estado_valor }}')">
-                    {{ estado_label }}
-                </button>
-                {% endfor %}
-            </div>
-
             <form method="post" enctype="multipart/form-data" id="updateForm">
                 {% csrf_token %}
+                {{ form.operation_id }}
 
-                <div class="field">
-                    <label>Estado seleccionado</label>
-                    {{ form.nuevo_estado }}
+                <div id="formErrorSummary"
+                     class="form-error-summary"
+                     role="alert"
+                     aria-live="assertive"
+                     tabindex="-1"
+                     {% if not form.errors %}hidden{% endif %}>
+                    <strong>No se pudo guardar el cambio.</strong>
+                    <div id="formErrorSummaryText">Revisa los campos indicados y vuelve a intentarlo.</div>
+                    {% if form.errors %}
+                    <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                    {% endif %}
                 </div>
+
+                <fieldset class="field" style="border:0;">
+                    <legend style="font-size:13px; font-weight:700; color:var(--color-text-secondary); margin-bottom:8px;">
+                        Selecciona el nuevo estado
+                    </legend>
+                    <div class="state-options">
+                        {% for estado_valor, estado_label in next_states %}
+                        <div class="state-option">
+                            <input type="radio"
+                                   name="nuevo_estado"
+                                   id="estado_{{ estado_valor }}"
+                                   value="{{ estado_valor }}"
+                                   {% if form.nuevo_estado.value == estado_valor %}checked{% endif %}
+                                   aria-describedby="error_nuevo_estado">
+                            <label for="estado_{{ estado_valor }}">{{ estado_label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="error_nuevo_estado" class="field-error" data-error-for="nuevo_estado" role="alert">
+                    {% if form.nuevo_estado.errors %}
+                        {% for error in form.nuevo_estado.errors %}<div>{{ error }}</div>{% endfor %}
+                    {% endif %}
+                    </div>
+                </fieldset>
 
                 <div class="field" id="photoWrapper" style="display:none;">
-                    <label>Fotos de evidencia <span style="color:var(--color-danger-text);">*</span></label>
+                    <label for="id_foto_guia">Foto de la guía firmada <span style="color:var(--color-danger-text);">*</span></label>
                     <p style="font-size:12px; color:var(--color-text-secondary); margin:-4px 0 10px;">
-                        La <strong>primera foto</strong> debe ser la guía de despacho firmada
-                        (se envía por correo en PDF). Las siguientes son evidencia adicional.
+                        Toma una foto legible de la guía de despacho firmada. Se enviará por correo en PDF.
                     </p>
+                    <input type="file" id="id_foto_guia" name="foto_guia"
+                           accept="image/jpeg,image/png,image/webp" capture="environment"
+                           class="form-input" aria-describedby="error_foto_guia">
+                    <div id="error_foto_guia" class="field-error" data-error-for="foto_guia" role="alert">
+                        {% if form.foto_guia.errors %}
+                        {% for error in form.foto_guia.errors %}<div>{{ error }}</div>{% endfor %}
+                        {% endif %}
+                    </div>
 
-                    <!-- Inputs ocultos -->
-                    <input type="file" id="photoInput" name="evidencia_fotos"
-                           accept="image/*" multiple style="display:none;">
-                    <input type="file" id="irCamFallback" accept="image/*" capture="environment"
-                           style="display:none;" onchange="onFallbackFile(this)">
-                    <input type="file" id="galleryPicker" accept="image/*" multiple
-                           style="display:none;" onchange="addFromGallery(this)">
-
-                    <!-- Botón principal: tomar foto -->
-                    <button type="button" id="btnOpenCamera"
-                            style="display:block; width:100%; padding:18px 8px; margin-top:8px;
-                                   background:var(--color-primary-strong); color:var(--color-text-on-primary); border:none; border-radius:var(--radius-lg);
-                                   font-size:17px; font-weight:700; cursor:pointer; letter-spacing:.3px;">
-                        Tomar foto
-                    </button>
-                    <p style="font-size:11px; color:var(--color-text-secondary); text-align:center; margin:5px 0 12px;">
-                        Puedes sacar varias fotos seguidas sin cerrar la cámara
+                    <label for="id_fotos_evidencia" style="margin-top:18px;">
+                        <span id="evidenceLabel">Evidencia de la entrega</span>
+                        <span style="color:var(--color-danger-text);">*</span>
+                    </label>
+                    <p id="evidenceHelp" style="font-size:12px; color:var(--color-text-secondary); margin:-4px 0 10px;">
+                        Adjunta entre 1 y 5 fotos que demuestren la entrega.
                     </p>
-
-                    <!-- Opción secundaria: elegir de galería -->
-                    <button type="button"
-                            onclick="document.getElementById('galleryPicker').click()"
-                            style="display:block; width:100%; padding:12px 8px;
-                                   background:var(--color-surface-muted); color:var(--color-text-secondary); border:1px solid var(--color-border-strong);
-                                   border-radius:var(--radius-md); font-size:14px; font-weight:600; cursor:pointer;">
-                        Adjuntar foto existente
-                    </button>
-
-                    <!-- Previsualización de fotos seleccionadas -->
-                    <div id="photoPreviewList"
-                         style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;"></div>
-                    <p id="photoCount"
-                       style="font-size:12px; color:var(--color-primary); font-weight:600; margin:6px 0 0; display:none;"></p>
+                    <input type="file" id="id_fotos_evidencia" name="fotos_evidencia"
+                           accept="image/jpeg,image/png,image/webp" capture="environment"
+                           multiple class="form-input" aria-describedby="evidenceHelp error_fotos_evidencia">
+                    <p style="font-size:11px; color:var(--color-text-muted); margin-top:6px;">
+                        Formatos JPG, PNG o WEBP. Máximo 10 MB por foto.
+                    </p>
+                    <div id="error_fotos_evidencia" class="field-error" data-error-for="fotos_evidencia" role="alert">
+                        {% if form.fotos_evidencia.errors %}
+                        {% for error in form.fotos_evidencia.errors %}<div>{{ error }}</div>{% endfor %}
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="field">
-                    <label>Observaciones <span style="color:var(--color-text-secondary); font-weight:400;">(opcional)</span></label>
+                    <label for="{{ form.notas.id_for_label }}">Observaciones <span style="color:var(--color-text-secondary); font-weight:400;">(opcional)</span></label>
                     {{ form.notas }}
+                    <div class="field-error" data-error-for="notas" role="alert"></div>
                 </div>
 
-                <button type="submit" class="btn-submit">Confirmar cambio</button>
+                <button type="submit" class="btn-submit" id="submitButton">Confirmar cambio</button>
             </form>
         </div>
 
@@ -546,15 +605,21 @@
                     {% if stage.fotos.all %}
                     <div class="tl-photos" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
                         {% for p in stage.fotos.all %}
-                        <a href="{{ p.foto.url }}" target="_blank">
-                            <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}"
-                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border);">
+                        <a href="{{ p.foto.url }}" target="_blank" rel="noopener noreferrer"
+                           class="photo-link"
+                           aria-label="Abrir foto {{ forloop.counter }} de la etapa {{ stage.get_estado_display }} en una pestaña nueva">
+                            <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}: {{ p.get_categoria_display }}"
+                                  style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border);">
                         </a>
                         {% endfor %}
                     </div>
                     {% elif stage.foto %}
                     <div class="tl-photo">
-                        <img src="{{ stage.foto.url }}" alt="Evidencia">
+                        <a href="{{ stage.foto.url }}" target="_blank" rel="noopener noreferrer"
+                           class="photo-link"
+                           aria-label="Abrir evidencia de la etapa {{ stage.get_estado_display }} en una pestaña nueva">
+                            <img src="{{ stage.foto.url }}" alt="Evidencia de {{ stage.get_estado_display }}">
+                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -572,100 +637,89 @@
             if (wrapper) {
                 wrapper.style.display = ESTADOS_CON_FOTO.includes(value) ? 'block' : 'none';
             }
-        }
-
-        function setEstado(value) {
-            const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
-            if (sel) {
-                sel.value = value;
-                toggleFotoField(value);
-                document.getElementById('updateForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const isRejected = value === 'rechazada';
+            const label = document.getElementById('evidenceLabel');
+            const help = document.getElementById('evidenceHelp');
+            if (label) {
+                label.textContent = isRejected ? 'Evidencia del rechazo' : 'Evidencia de la entrega';
+            }
+            if (help) {
+                help.textContent = isRejected
+                    ? 'Adjunta entre 1 y 5 fotos que demuestren el motivo o resultado del rechazo.'
+                    : 'Adjunta entre 1 y 5 fotos que demuestren la entrega.';
             }
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
-            if (sel) {
-                sel.addEventListener('change', () => toggleFotoField(sel.value));
-                toggleFotoField(sel.value);
-            }
+            const radios = document.querySelectorAll('input[name="nuevo_estado"]');
+            radios.forEach((radio) => {
+                radio.addEventListener('change', () => toggleFotoField(radio.value));
+                if (radio.checked) toggleFotoField(radio.value);
+            });
+
+            const summary = document.getElementById('formErrorSummary');
+            if (summary && !summary.hidden) summary.focus();
         });
 
-        /* ── DataTransfer acumula los archivos para el form ── */
-        const dt = new DataTransfer();
+        document.getElementById('updateForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const button = document.getElementById('submitButton');
+            const summary = document.getElementById('formErrorSummary');
+            const summaryText = document.getElementById('formErrorSummaryText');
 
-        function syncMainInput() {
-            document.getElementById('photoInput').files = dt.files;
-            const n = dt.files.length;
-            const counter = document.getElementById('photoCount');
-            counter.style.display = n > 0 ? 'block' : 'none';
-            counter.textContent = n + ' foto' + (n !== 1 ? 's' : '') + ' lista' + (n !== 1 ? 's' : '');
-        }
-
-        function renderPreview() {
-            const preview = document.getElementById('photoPreviewList');
-            preview.innerHTML = '';
-            Array.from(dt.files).forEach(function (file, idx) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const wrap = document.createElement('div');
-                    wrap.style.cssText = 'position:relative;width:80px;height:80px;';
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--color-primary);';
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.textContent = '✕';
-                    btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:22px;height:22px;' +
-                        'border-radius:50%;background:var(--color-danger);color:#fff;border:none;font-size:12px;cursor:pointer;';
-                    btn.onclick = function () { removePhoto(idx); };
-                    wrap.appendChild(img);
-                    wrap.appendChild(btn);
-                    preview.appendChild(wrap);
-                };
-                reader.readAsDataURL(file);
+            document.querySelectorAll('[data-error-for]').forEach((node) => {
+                node.innerHTML = '';
             });
-        }
+            summary.hidden = true;
+            button.disabled = true;
+            button.textContent = 'Guardando…';
+            button.setAttribute('aria-busy', 'true');
 
-        function removePhoto(idx) {
-            const newDt = new DataTransfer();
-            Array.from(dt.files).forEach(function (f, i) { if (i !== idx) newDt.items.add(f); });
-            dt.items.clear();
-            Array.from(newDt.files).forEach(function (f) { dt.items.add(f); });
-            syncMainInput();
-            renderPreview();
-        }
-
-        function onFallbackFile(input) {
-            if (input.files && input.files[0]) {
-                dt.items.add(input.files[0]);
-                syncMainInput();
-                renderPreview();
-                const clone = input.cloneNode(false);
-                clone.addEventListener('change', function () { onFallbackFile(clone); });
-                input.parentNode.replaceChild(clone, input);
-            }
-        }
-
-        function addFromGallery(input) {
-            if (input.files && input.files.length) {
-                Array.from(input.files).forEach(function (f) { dt.items.add(f); });
-                input.value = '';
-                syncMainInput();
-                renderPreview();
-            }
-        }
-
-        /* Conectar botón Cámara con IrritecCamera (camera.js) */
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('btnOpenCamera').addEventListener('click', function () {
-                IrritecCamera.open(function (file) {
-                    dt.items.add(file);
-                    syncMainInput();
-                    renderPreview();
+            try {
+                const response = await fetch(form.action || window.location.href, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    credentials: 'same-origin',
                 });
-            });
+                const data = await response.json();
+
+                if (!response.ok || !data.ok) {
+                    const errors = data.errors || {};
+                    Object.entries(errors).forEach(([field, messages]) => {
+                        const target = document.querySelector(`[data-error-for="${field}"]`);
+                        if (target) {
+                            target.innerHTML = messages.map((message) => `<div>${escapeHtml(message)}</div>`).join('');
+                        }
+                    });
+                    summaryText.textContent = data.message || 'Revisa los campos indicados y vuelve a intentarlo.';
+                    summary.hidden = false;
+                    summary.focus();
+                    return;
+                }
+
+                button.textContent = 'Guardado';
+                window.location.assign(data.redirect_url);
+            } catch (error) {
+                summaryText.textContent = 'No se pudo conectar. Tus fotos siguen seleccionadas; revisa tu conexión y vuelve a intentarlo.';
+                summary.hidden = false;
+                summary.focus();
+            } finally {
+                if (button.textContent !== 'Guardado') {
+                    button.disabled = false;
+                    button.textContent = 'Confirmar cambio';
+                    button.removeAttribute('aria-busy');
+                }
+            }
         });
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value;
+            return element.innerHTML;
+        }
+
     </script>
 
 </body>

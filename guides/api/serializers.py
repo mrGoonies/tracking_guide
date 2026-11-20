@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from guides.models import Client, DispatchGuide, GuideStage, GuideStagePhoto
+from guides.workflows import allowed_state_values
 
 
 # ── Auth ────────────────────────────────────────────────────────────────────
@@ -68,16 +69,6 @@ class ClientSerializer(serializers.ModelSerializer):
 
 # ── Guías ────────────────────────────────────────────────────────────────────
 
-NEXT_STATE_MAP = {
-    'emitida':   ['asignada', 'en_ruta', 'rechazada'],
-    'asignada':  ['en_ruta', 'entregada', 'rechazada'],
-    'en_ruta':   ['entregada', 'rechazada'],
-    'entregada': ['cerrada'],
-    'rechazada': ['cerrada'],
-    'cerrada':   [],
-}
-
-
 class DispatchGuideListSerializer(serializers.ModelSerializer):
     """Serializer liviano para el listado de guías."""
     cliente_nombre = serializers.CharField(source='cliente.nombre', read_only=True)
@@ -117,8 +108,7 @@ class DispatchGuideDetailSerializer(serializers.ModelSerializer):
     def get_proximos_estados(self, obj):
         """Devuelve los estados válidos para el usuario actual.
         Transportistas no pueden cerrar guías."""
-        estados = list(NEXT_STATE_MAP.get(obj.estado, []))
         request = self.context.get('request')
-        if request and request.user.groups.filter(name='Transportista').exists():
-            estados = [e for e in estados if e != 'cerrada']
-        return estados
+        if not request:
+            return []
+        return list(allowed_state_values(obj, request.user))

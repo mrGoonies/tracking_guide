@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, status
@@ -15,6 +16,8 @@ from guides.services import (
     send_coordinator_notification,
     generate_guide_pdf_backup,
 )
+from guides.workflows import validate_state_transition
+from guides.photo_validation import validate_required_evidence
 from .permissions import IsTransportista
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -23,10 +26,6 @@ from .serializers import (
 )
 
 ESTADOS_REQUIEREN_FOTO = DispatchGuide.ESTADOS_REQUIEREN_FOTO
-
-# Transportistas no pueden cerrar guías — solo admin/coordinador desde la web
-ESTADOS_VALIDOS_TRANSPORTISTA = {'asignada', 'en_ruta', 'entregada', 'rechazada'}
-
 
 # ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -96,77 +95,88 @@ class UpdateEstadoView(APIView):
         observaciones = request.data.get('observaciones', '').strip()
 
         # Fotos por categoría (solo para entregada/rechazada)
-        foto_guia      = request.FILES.get('foto_guia')
-        fotos_cliente  = request.FILES.getlist('fotos_cliente')
+        fotos_guia = request.FILES.getlist('foto_guia')
+        # ``fotos_cliente`` se conserva como alias para clientes móviles existentes.
+        fotos_evidencia = (
+            request.FILES.getlist('fotos_evidencia')
+            or request.FILES.getlist('fotos_cliente')
+        )
 
-        # Validar estado
-        if nuevo_estado not in ESTADOS_VALIDOS_TRANSPORTISTA:
+        transition_is_valid, transition_error = validate_state_transition(
+            guide, nuevo_estado, request.user
+        )
+        if not transition_is_valid:
             return Response(
-                {'error': f'Estado "{nuevo_estado}" no es válido.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Validar transición permitida
-        from .serializers import NEXT_STATE_MAP
-        if nuevo_estado not in NEXT_STATE_MAP.get(guide.estado, []):
-            return Response(
-                {'error': f'No se puede pasar de "{guide.estado}" a "{nuevo_estado}".'},
+                {'error': transition_error},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validar fotos obligatorias por categoría
         if nuevo_estado in ESTADOS_REQUIEREN_FOTO:
-            if not foto_guia:
-                return Response(
-                    {'error': 'La foto de la guía de despacho firmada es obligatoria.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if not fotos_cliente:
-                return Response(
-                    {'error': 'Se requiere al menos una foto del cliente recepcionando los productos.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        # Crear etapa
-        try:
-            etapa = GuideStage.objects.create(
-                guia=guide,
-                estado=nuevo_estado,
-                observaciones=observaciones or None,
+            evidence_errors = validate_required_evidence(
+                nuevo_estado, fotos_guia, fotos_evidencia
             )
-        except Exception as exc:
-            logger.error('[UpdateEstado] Error creando GuideStage guia=%s: %s', pk, exc, exc_info=True)
-            return Response({'error': 'Error interno al registrar la etapa.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            if evidence_errors:
+                return Response(
+                    {'error': 'La evidencia fotográfica es inválida.', 'campos': evidence_errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            foto_guia = fotos_guia[0]
+        else:
+            foto_guia = fotos_guia[0] if fotos_guia else None
 
-        # Guardar foto de guía (solo una)
-        foto_guia_obj = None
-        if foto_guia:
-            try:
-                foto_guia_obj = GuideStagePhoto.objects.create(etapa=etapa, foto=foto_guia, orden=0, categoria='guia')
-            except Exception as exc:
-                logger.error('[UpdateEstado] Error guardando foto_guia guia=%s: %s', pk, exc, exc_info=True)
-                etapa.delete()
-                return Response({'error': 'Error al guardar la foto de la guía. Intenta nuevamente.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Guardar fotos del cliente (múltiples)
-        for i, foto in enumerate(fotos_cliente):
-            try:
-                GuideStagePhoto.objects.create(etapa=etapa, foto=foto, orden=i, categoria='cliente')
-            except Exception as exc:
-                logger.error('[UpdateEstado] Error guardando foto_cliente[%d] guia=%s: %s', i, pk, exc, exc_info=True)
-                etapa.delete()
-                return Response({'error': 'Error al guardar una foto del cliente. Intenta nuevamente.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Actualizar guía
+        # Guardar etapa, fotos y estado como una sola operación.
         try:
-            guide.estado = nuevo_estado
-            if nuevo_estado in ESTADOS_REQUIEREN_FOTO and not guide.fecha_envio:
-                guide.fecha_envio = timezone.localdate()
-            guide.save()
+            with transaction.atomic():
+                guide = DispatchGuide.objects.select_for_update().get(
+                    id=pk, transportista=request.user
+                )
+                transition_is_valid, transition_error = validate_state_transition(
+                    guide, nuevo_estado, request.user
+                )
+                if not transition_is_valid:
+                    transaction.set_rollback(True)
+                    return Response(
+                        {'error': transition_error},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                etapa = GuideStage.objects.create(
+                    guia=guide,
+                    estado=nuevo_estado,
+                    observaciones=observaciones or None,
+                )
+
+                foto_guia_obj = None
+                if foto_guia:
+                    foto_guia_obj = GuideStagePhoto.objects.create(
+                        etapa=etapa,
+                        foto=foto_guia,
+                        orden=0,
+                        categoria='guia',
+                    )
+
+                for i, foto in enumerate(fotos_evidencia):
+                    GuideStagePhoto.objects.create(
+                        etapa=etapa,
+                        foto=foto,
+                        orden=i,
+                        categoria='cliente',
+                    )
+
+                guide.estado = nuevo_estado
+                if nuevo_estado in ESTADOS_REQUIEREN_FOTO and not guide.fecha_envio:
+                    guide.fecha_envio = timezone.localdate()
+                guide.save()
         except Exception as exc:
-            logger.error('[UpdateEstado] Error guardando guide.save() guia=%s: %s', pk, exc, exc_info=True)
-            etapa.delete()
-            return Response({'error': 'Error interno al actualizar el estado.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(
+                '[UpdateEstado] Error guardando cambio completo guia=%s: %s',
+                pk, exc, exc_info=True
+            )
+            return Response(
+                {'error': 'No fue posible guardar el cambio ni sus fotos. Intenta nuevamente.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         # Generar PDF de la guía firmada (no fatal). pdf_bytes se usa para
         # adjuntarlo al correo; el backup en Cloudinary es best-effort.

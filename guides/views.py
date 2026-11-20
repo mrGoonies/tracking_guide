@@ -5,6 +5,7 @@ import os
 import re
 import tempfile
 import unicodedata
+import uuid
 from datetime import timedelta, datetime, date as date_type
 from io import BytesIO
 
@@ -15,6 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.db.models import Count, Q, Prefetch
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -27,6 +29,8 @@ from .forms import CreateDispatchGuideForm, UpdateGuideStateForm, ImportClientCS
 from .utils import get_home_url_for_user, is_transportista, is_coordinador
 from .models import Client, DeletedGuideNumber, DispatchGuide, GuideStage, GuideStagePhoto, Seller
 from .services import send_seller_notification, send_coordinator_notification, generate_guide_pdf_backup
+from .workflows import allowed_state_choices, validate_state_transition
+from .photo_validation import validate_required_evidence
 
 def home(request):
     if request.user.is_authenticated:
@@ -301,13 +305,20 @@ def create_guide(request):
             if not admin_session:
                 guide.vendedor_nombre = None
             guide.usa_direccion_facturacion = usa_direccion_facturacion
+            if guide.transportista_id:
+                guide.estado = 'asignada'
             guide.save()
             
             GuideStage.objects.create(
                 guia=guide,
-                estado='emitida',
+                estado=guide.estado,
                 foto=form.cleaned_data.get('foto_emision'),
-                observaciones='Guía emitida en el sistema'
+                observaciones=(
+                    f'Guía emitida y asignada a '
+                    f'{guide.transportista.get_full_name() or guide.transportista.username}'
+                    if guide.transportista_id
+                    else 'Guía emitida en el sistema'
+                )
             )
             
             messages.success(request, f'✓ Guía {guide.numero_guia} creada exitosamente')
@@ -366,63 +377,149 @@ def guide_detail(request, guide_id):
 
     stages = guide.etapas.order_by('-timestamp')
     
-    next_state_map = {
-        'emitida': [('asignada', 'Asignar'), ('en_ruta', 'En Ruta'), ('rechazada', 'Rechazada')],
-        'asignada': [('en_ruta', 'En Ruta'), ('entregada', 'Entregada'), ('rechazada', 'Rechazada')],
-        'en_ruta': [('entregada', 'Entregada'), ('rechazada', 'Rechazada')],
-        'entregada': [('cerrada', 'Cerrar')],
-        'rechazada': [('cerrada', 'Cerrar')],
-        'cerrada': [],
-    }
-    next_states = next_state_map.get(guide.estado, [])
+    next_states = allowed_state_choices(guide, request.user)
+    is_async = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-    # Transportistas no pueden cerrar guías
-    if is_transportista(request.user):
-        next_states = [(s, l) for s, l in next_states if s != 'cerrada']
+    def success_response(current_guide, duplicate=False):
+        redirect_url = request.build_absolute_uri(
+            request.path
+        )
+        if is_async:
+            return JsonResponse({
+                'ok': True,
+                'duplicate': duplicate,
+                'message': f'Estado actualizado a "{current_guide.get_estado_display()}".',
+                'redirect_url': redirect_url,
+            })
+        messages.success(
+            request,
+            f'✓ Estado actualizado a "{current_guide.get_estado_display()}"'
+        )
+        return redirect('guide_detail', guide_id=current_guide.id)
     
     if request.method == 'POST':
-        form = UpdateGuideStateForm(request.POST, request.FILES)
+        raw_operation_id = request.POST.get('operation_id', '')
+        try:
+            parsed_operation_id = uuid.UUID(raw_operation_id)
+        except (ValueError, TypeError, AttributeError):
+            parsed_operation_id = None
+
+        # Un reintento tras perder la respuesta debe recuperar el resultado
+        # anterior, aun si el estado actual ya cambió y dejó de ser una opción.
+        if parsed_operation_id:
+            existing_stage = GuideStage.objects.filter(
+                guia=guide, operation_id=parsed_operation_id
+            ).first()
+            if existing_stage:
+                guide.refresh_from_db()
+                return success_response(guide, duplicate=True)
+
+        form = UpdateGuideStateForm(
+            request.POST, request.FILES, guide=guide, user=request.user
+        )
         if form.is_valid():
             nuevo_estado = form.cleaned_data['nuevo_estado']
-            evidencia_foto = form.cleaned_data.get('evidencia_foto')
             notas = form.cleaned_data.get('notas', '')
 
-            fotos = request.FILES.getlist('evidencia_fotos')
+            fotos_guia = request.FILES.getlist('foto_guia')
+            fotos_evidencia = request.FILES.getlist('fotos_evidencia')
             requiere_evidencia = nuevo_estado in DispatchGuide.ESTADOS_REQUIEREN_FOTO
+            transition_is_valid, transition_error = validate_state_transition(
+                guide, nuevo_estado, request.user
+            )
 
-            if requiere_evidencia and not fotos:
-                form.add_error('evidencia_foto', 'Debes subir al menos una foto al marcar como entregada o rechazada.')
-            else:
-                stage = GuideStage.objects.create(
-                    guia=guide,
-                    estado=nuevo_estado,
-                    observaciones=notas
+            if not transition_is_valid:
+                form.add_error('nuevo_estado', transition_error)
+            elif requiere_evidencia:
+                evidence_errors = validate_required_evidence(
+                    nuevo_estado, fotos_guia, fotos_evidencia
                 )
+                for field, field_errors in evidence_errors.items():
+                    for error in field_errors:
+                        form.add_error(field, error)
 
-                # La primera foto se toma como la guía de despacho firmada:
-                # se categoriza aparte y se convierte a PDF para adjuntar al correo.
-                pdf_bytes = None
-                for i, foto in enumerate(fotos):
-                    categoria = ('guia' if i == 0 else 'cliente') if requiere_evidencia else 'general'
-                    foto_obj = GuideStagePhoto.objects.create(etapa=stage, foto=foto, orden=i, categoria=categoria)
-                    if categoria == 'guia':
-                        pdf_bytes, pdf_url = generate_guide_pdf_backup(foto, guide)
-                        if pdf_url:
-                            foto_obj.pdf_backup = pdf_url
-                            foto_obj.save(update_fields=['pdf_backup'])
+            if form.errors:
+                pass
+            else:
+                duplicate_stage = None
+                with transaction.atomic():
+                    locked_guide = DispatchGuide.objects.select_for_update().get(pk=guide.pk)
+                    duplicate_stage = GuideStage.objects.filter(
+                        guia=locked_guide,
+                        operation_id=form.cleaned_data['operation_id'],
+                    ).first()
+                    if duplicate_stage:
+                        transition_is_valid = True
+                    else:
+                        transition_is_valid, transition_error = validate_state_transition(
+                            locked_guide, nuevo_estado, request.user
+                        )
+                        if not transition_is_valid:
+                            form.add_error('nuevo_estado', transition_error)
+                        else:
+                            stage = GuideStage.objects.create(
+                                guia=locked_guide,
+                                estado=nuevo_estado,
+                                observaciones=notas,
+                                operation_id=form.cleaned_data['operation_id'],
+                            )
 
-                guide.estado = nuevo_estado
-                if requiere_evidencia and not guide.fecha_envio:
-                    guide.fecha_envio = timezone.localdate()
-                guide.save()
+                            pdf_bytes = None
+                            if requiere_evidencia:
+                                foto_guia = fotos_guia[0]
+                                foto_obj = GuideStagePhoto.objects.create(
+                                    etapa=stage, foto=foto_guia, orden=0, categoria='guia'
+                                )
+                                pdf_bytes, pdf_url = generate_guide_pdf_backup(
+                                    foto_guia, locked_guide
+                                )
+                                if pdf_url:
+                                    foto_obj.pdf_backup = pdf_url
+                                    foto_obj.save(update_fields=['pdf_backup'])
 
-                send_seller_notification(guide, pdf_bytes=pdf_bytes)
-                send_coordinator_notification(guide, pdf_bytes=pdf_bytes)
+                                for i, foto in enumerate(fotos_evidencia):
+                                    GuideStagePhoto.objects.create(
+                                        etapa=stage,
+                                        foto=foto,
+                                        orden=i,
+                                        categoria='cliente',
+                                    )
+                            else:
+                                for i, foto in enumerate(fotos_evidencia):
+                                    GuideStagePhoto.objects.create(
+                                        etapa=stage,
+                                        foto=foto,
+                                        orden=i,
+                                        categoria='general',
+                                    )
 
-                messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
-                return redirect('guide_detail', guide_id=guide.id)
+                            locked_guide.estado = nuevo_estado
+                            if requiere_evidencia and not locked_guide.fecha_envio:
+                                locked_guide.fecha_envio = timezone.localdate()
+                            locked_guide.save()
+
+                if transition_is_valid:
+                    guide = locked_guide
+                    if not duplicate_stage:
+                        send_seller_notification(guide, pdf_bytes=pdf_bytes)
+                        send_coordinator_notification(guide, pdf_bytes=pdf_bytes)
+                    return success_response(guide, duplicate=bool(duplicate_stage))
+
+        if is_async:
+            return JsonResponse({
+                'ok': False,
+                'message': 'Revisa los campos indicados.',
+                'errors': {
+                    field: [str(message) for message in errors]
+                    for field, errors in form.errors.items()
+                },
+            }, status=422)
     else:
-        form = UpdateGuideStateForm()
+        form = UpdateGuideStateForm(
+            guide=guide,
+            user=request.user,
+            initial={'operation_id': uuid.uuid4()},
+        )
     
     template = (
         'guides/transportista_guide_detail.html'
