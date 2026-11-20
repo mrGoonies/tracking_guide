@@ -472,6 +472,7 @@
 
             <form method="post" enctype="multipart/form-data" id="updateForm">
                 {% csrf_token %}
+                {{ form.operation_id }}
 
                 <div class="field">
                     {{ form.nuevo_estado }}

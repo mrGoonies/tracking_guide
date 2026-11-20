@@ -1,3 +1,6 @@
+import uuid
+from unittest.mock import patch
+
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -64,7 +67,11 @@ class GuideStateTransitionTests(TestCase):
 
         response = self.client.post(
             reverse('guide_detail', args=[self.guide.id]),
-            {'nuevo_estado': 'cerrada', 'notas': 'POST manipulado'},
+            {
+                'operation_id': str(uuid.uuid4()),
+                'nuevo_estado': 'cerrada',
+                'notas': 'POST manipulado',
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -116,7 +123,10 @@ class GuideStateTransitionTests(TestCase):
 
         response = self.client.post(
             reverse('guide_detail', args=[self.guide.id]),
-            {'nuevo_estado': 'entregada'},
+            {
+                'operation_id': str(uuid.uuid4()),
+                'nuevo_estado': 'entregada',
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -144,7 +154,11 @@ class GuideStateTransitionTests(TestCase):
 
         response = self.client.post(
             reverse('guide_detail', args=[self.guide.id]),
-            {'nuevo_estado': 'rechazada', 'foto_guia': invalid_but_present_file},
+            {
+                'operation_id': str(uuid.uuid4()),
+                'nuevo_estado': 'rechazada',
+                'foto_guia': invalid_but_present_file,
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -155,6 +169,40 @@ class GuideStateTransitionTests(TestCase):
         self.guide.refresh_from_db()
         self.assertEqual(self.guide.estado, 'en_ruta')
         self.assertEqual(self.guide.etapas.count(), stage_count)
+
+    @patch('guides.views.send_coordinator_notification')
+    @patch('guides.views.send_seller_notification')
+    def test_retrying_same_operation_does_not_create_duplicate_stage(
+        self, _send_seller, _send_coordinator
+    ):
+        self.guide.estado = 'asignada'
+        self.guide.save(update_fields=['estado'])
+        self.client.force_login(self.carrier)
+        operation_id = str(uuid.uuid4())
+        stage_count = self.guide.etapas.count()
+        payload = {
+            'operation_id': operation_id,
+            'nuevo_estado': 'en_ruta',
+            'notas': 'Inicio de ruta',
+        }
+
+        first = self.client.post(
+            reverse('guide_detail', args=[self.guide.id]), payload
+        )
+        second = self.client.post(
+            reverse('guide_detail', args=[self.guide.id]), payload
+        )
+
+        self.assertEqual(first.status_code, 302)
+        self.assertEqual(second.status_code, 302)
+        self.guide.refresh_from_db()
+        self.assertEqual(self.guide.estado, 'en_ruta')
+        self.assertEqual(self.guide.etapas.count(), stage_count + 1)
+        self.assertEqual(
+            self.guide.etapas.filter(operation_id=operation_id).count(), 1
+        )
+        _send_seller.assert_called_once()
+        _send_coordinator.assert_called_once()
 
     def test_api_delivery_without_evidence_returns_errors_by_category(self):
         self.guide.estado = 'en_ruta'

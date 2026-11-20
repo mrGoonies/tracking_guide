@@ -5,6 +5,7 @@ import os
 import re
 import tempfile
 import unicodedata
+import uuid
 from datetime import timedelta, datetime, date as date_type
 from io import BytesIO
 
@@ -377,8 +378,42 @@ def guide_detail(request, guide_id):
     stages = guide.etapas.order_by('-timestamp')
     
     next_states = allowed_state_choices(guide, request.user)
+    is_async = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def success_response(current_guide, duplicate=False):
+        redirect_url = request.build_absolute_uri(
+            request.path
+        )
+        if is_async:
+            return JsonResponse({
+                'ok': True,
+                'duplicate': duplicate,
+                'message': f'Estado actualizado a "{current_guide.get_estado_display()}".',
+                'redirect_url': redirect_url,
+            })
+        messages.success(
+            request,
+            f'✓ Estado actualizado a "{current_guide.get_estado_display()}"'
+        )
+        return redirect('guide_detail', guide_id=current_guide.id)
     
     if request.method == 'POST':
+        raw_operation_id = request.POST.get('operation_id', '')
+        try:
+            parsed_operation_id = uuid.UUID(raw_operation_id)
+        except (ValueError, TypeError, AttributeError):
+            parsed_operation_id = None
+
+        # Un reintento tras perder la respuesta debe recuperar el resultado
+        # anterior, aun si el estado actual ya cambió y dejó de ser una opción.
+        if parsed_operation_id:
+            existing_stage = GuideStage.objects.filter(
+                guia=guide, operation_id=parsed_operation_id
+            ).first()
+            if existing_stage:
+                guide.refresh_from_db()
+                return success_response(guide, duplicate=True)
+
         form = UpdateGuideStateForm(
             request.POST, request.FILES, guide=guide, user=request.user
         )
@@ -406,63 +441,85 @@ def guide_detail(request, guide_id):
             if form.errors:
                 pass
             else:
+                duplicate_stage = None
                 with transaction.atomic():
                     locked_guide = DispatchGuide.objects.select_for_update().get(pk=guide.pk)
-                    transition_is_valid, transition_error = validate_state_transition(
-                        locked_guide, nuevo_estado, request.user
-                    )
-                    if not transition_is_valid:
-                        form.add_error('nuevo_estado', transition_error)
+                    duplicate_stage = GuideStage.objects.filter(
+                        guia=locked_guide,
+                        operation_id=form.cleaned_data['operation_id'],
+                    ).first()
+                    if duplicate_stage:
+                        transition_is_valid = True
                     else:
-                        stage = GuideStage.objects.create(
-                            guia=locked_guide,
-                            estado=nuevo_estado,
-                            observaciones=notas
+                        transition_is_valid, transition_error = validate_state_transition(
+                            locked_guide, nuevo_estado, request.user
                         )
-
-                        pdf_bytes = None
-                        if requiere_evidencia:
-                            foto_guia = fotos_guia[0]
-                            foto_obj = GuideStagePhoto.objects.create(
-                                etapa=stage, foto=foto_guia, orden=0, categoria='guia'
-                            )
-                            pdf_bytes, pdf_url = generate_guide_pdf_backup(
-                                foto_guia, locked_guide
-                            )
-                            if pdf_url:
-                                foto_obj.pdf_backup = pdf_url
-                                foto_obj.save(update_fields=['pdf_backup'])
-
-                            for i, foto in enumerate(fotos_evidencia):
-                                GuideStagePhoto.objects.create(
-                                    etapa=stage,
-                                    foto=foto,
-                                    orden=i,
-                                    categoria='cliente',
-                                )
+                        if not transition_is_valid:
+                            form.add_error('nuevo_estado', transition_error)
                         else:
-                            for i, foto in enumerate(fotos_evidencia):
-                                GuideStagePhoto.objects.create(
-                                    etapa=stage,
-                                    foto=foto,
-                                    orden=i,
-                                    categoria='general',
-                                )
+                            stage = GuideStage.objects.create(
+                                guia=locked_guide,
+                                estado=nuevo_estado,
+                                observaciones=notas,
+                                operation_id=form.cleaned_data['operation_id'],
+                            )
 
-                        locked_guide.estado = nuevo_estado
-                        if requiere_evidencia and not locked_guide.fecha_envio:
-                            locked_guide.fecha_envio = timezone.localdate()
-                        locked_guide.save()
+                            pdf_bytes = None
+                            if requiere_evidencia:
+                                foto_guia = fotos_guia[0]
+                                foto_obj = GuideStagePhoto.objects.create(
+                                    etapa=stage, foto=foto_guia, orden=0, categoria='guia'
+                                )
+                                pdf_bytes, pdf_url = generate_guide_pdf_backup(
+                                    foto_guia, locked_guide
+                                )
+                                if pdf_url:
+                                    foto_obj.pdf_backup = pdf_url
+                                    foto_obj.save(update_fields=['pdf_backup'])
+
+                                for i, foto in enumerate(fotos_evidencia):
+                                    GuideStagePhoto.objects.create(
+                                        etapa=stage,
+                                        foto=foto,
+                                        orden=i,
+                                        categoria='cliente',
+                                    )
+                            else:
+                                for i, foto in enumerate(fotos_evidencia):
+                                    GuideStagePhoto.objects.create(
+                                        etapa=stage,
+                                        foto=foto,
+                                        orden=i,
+                                        categoria='general',
+                                    )
+
+                            locked_guide.estado = nuevo_estado
+                            if requiere_evidencia and not locked_guide.fecha_envio:
+                                locked_guide.fecha_envio = timezone.localdate()
+                            locked_guide.save()
 
                 if transition_is_valid:
                     guide = locked_guide
-                    send_seller_notification(guide, pdf_bytes=pdf_bytes)
-                    send_coordinator_notification(guide, pdf_bytes=pdf_bytes)
+                    if not duplicate_stage:
+                        send_seller_notification(guide, pdf_bytes=pdf_bytes)
+                        send_coordinator_notification(guide, pdf_bytes=pdf_bytes)
+                    return success_response(guide, duplicate=bool(duplicate_stage))
 
-                    messages.success(request, f'✓ Estado actualizado a "{guide.get_estado_display()}"')
-                    return redirect('guide_detail', guide_id=guide.id)
+        if is_async:
+            return JsonResponse({
+                'ok': False,
+                'message': 'Revisa los campos indicados.',
+                'errors': {
+                    field: [str(message) for message in errors]
+                    for field, errors in form.errors.items()
+                },
+            }, status=422)
     else:
-        form = UpdateGuideStateForm(guide=guide, user=request.user)
+        form = UpdateGuideStateForm(
+            guide=guide,
+            user=request.user,
+            initial={'operation_id': uuid.uuid4()},
+        )
     
     template = (
         'guides/transportista_guide_detail.html'

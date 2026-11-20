@@ -87,6 +87,8 @@ class CreateDispatchGuideForm(forms.ModelForm):
 
 class UpdateGuideStateForm(forms.Form):
     """Formulario para actualizar el estado de una guía con evidencia fotográfica."""
+    operation_id = forms.UUIDField(widget=forms.HiddenInput())
+
     nuevo_estado = forms.ChoiceField(
         label='Nuevo Estado',
         choices=(),

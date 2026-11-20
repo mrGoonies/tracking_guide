@@ -134,6 +134,13 @@ class GuideStage(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     foto = models.ImageField(upload_to=_guide_photo_path, max_length=500, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
+    operation_id = models.UUIDField(
+        unique=True,
+        null=True,
+        blank=True,
+        editable=False,
+        help_text='Identificador idempotente del cambio de estado.',
+    )
 
     class Meta:
         verbose_name = "Etapa de Guía"

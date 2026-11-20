@@ -154,35 +154,39 @@
         .badge-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
         .badge-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
 
-        /* Quick action buttons */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 18px;
-        }
-
-        .quick-actions.single { grid-template-columns: 1fr; }
-
-        .btn-quick {
-            padding: 16px 12px;
+        .state-options { display: grid; gap: 10px; margin-bottom: 18px; }
+        .state-option input { position: absolute; opacity: 0; pointer-events: none; }
+        .state-option label {
+            display: block;
+            min-height: 48px;
+            padding: 13px 16px;
+            border: 2px solid var(--color-border-strong);
             border-radius: var(--radius-lg);
+            background: var(--color-surface);
+            color: var(--color-text);
             font-size: 15px;
             font-weight: 800;
-            border: none;
             cursor: pointer;
-            text-align: center;
-            transition: opacity 150ms ease, transform 100ms ease;
-            line-height: 1.2;
         }
-
-        .btn-quick:active { opacity: 0.8; transform: scale(0.97); }
-
-        .btn-quick-en_ruta   { background: var(--color-info-bg);    color: var(--color-info-text); }
-        .btn-quick-asignada  { background: var(--color-warning-bg); color: var(--color-warning-text); }
-        .btn-quick-entregada { background: var(--color-success-bg); color: var(--color-success-text); }
-        .btn-quick-rechazada { background: var(--color-danger-bg);  color: var(--color-danger-text); }
-        .btn-quick-cerrada   { background: var(--color-neutral-bg); color: var(--color-neutral-text); }
+        .state-option input:checked + label {
+            border-color: var(--color-primary);
+            background: var(--color-primary-surface);
+            color: var(--color-primary);
+        }
+        .state-option input:focus-visible + label {
+            outline: 3px solid var(--color-primary-border);
+            outline-offset: 2px;
+        }
+        .form-error-summary {
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            border: 1px solid var(--color-danger);
+            border-radius: var(--radius-md);
+            background: var(--color-danger-bg);
+            color: var(--color-danger-text);
+            font-size: 13px;
+        }
+        .field-error { font-size: 12px; color: var(--color-danger-text); margin-top: 5px; }
 
         /* Form fields */
         .field { margin-bottom: 16px; }
@@ -447,42 +451,65 @@
         <div class="card">
             <div class="card-title">Registrar cambio de estado</div>
 
-            <div class="quick-actions {% if next_states|length == 1 %}single{% endif %}">
-                {% for estado_valor, estado_label in next_states %}
-                <button type="button"
-                        class="btn-quick btn-quick-{{ estado_valor }}"
-                        onclick="setEstado('{{ estado_valor }}')">
-                    {{ estado_label }}
-                </button>
-                {% endfor %}
-            </div>
-
             <form method="post" enctype="multipart/form-data" id="updateForm">
                 {% csrf_token %}
+                {{ form.operation_id }}
 
-                <div class="field">
-                    <label>Estado seleccionado</label>
-                    {{ form.nuevo_estado }}
-                    {% if form.nuevo_estado.errors %}
-                    <div role="alert" style="font-size:12px; color:var(--color-danger-text); margin-top:5px;">
-                        {{ form.nuevo_estado.errors.0 }}
-                    </div>
+                <div id="formErrorSummary"
+                     class="form-error-summary"
+                     role="alert"
+                     aria-live="assertive"
+                     tabindex="-1"
+                     {% if not form.errors %}hidden{% endif %}>
+                    <strong>No se pudo guardar el cambio.</strong>
+                    <div id="formErrorSummaryText">Revisa los campos indicados y vuelve a intentarlo.</div>
+                    {% if form.errors %}
+                    <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
                     {% endif %}
                 </div>
 
+                <fieldset class="field" style="border:0;">
+                    <legend style="font-size:13px; font-weight:700; color:var(--color-text-secondary); margin-bottom:8px;">
+                        Selecciona el nuevo estado
+                    </legend>
+                    <div class="state-options">
+                        {% for estado_valor, estado_label in next_states %}
+                        <div class="state-option">
+                            <input type="radio"
+                                   name="nuevo_estado"
+                                   id="estado_{{ estado_valor }}"
+                                   value="{{ estado_valor }}"
+                                   {% if form.nuevo_estado.value == estado_valor %}checked{% endif %}
+                                   aria-describedby="error_nuevo_estado">
+                            <label for="estado_{{ estado_valor }}">{{ estado_label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="error_nuevo_estado" class="field-error" data-error-for="nuevo_estado" role="alert">
+                    {% if form.nuevo_estado.errors %}
+                        {% for error in form.nuevo_estado.errors %}<div>{{ error }}</div>{% endfor %}
+                    {% endif %}
+                    </div>
+                </fieldset>
+
                 <div class="field" id="photoWrapper" style="display:none;">
-                    <label>Foto de la guía firmada <span style="color:var(--color-danger-text);">*</span></label>
+                    <label for="id_foto_guia">Foto de la guía firmada <span style="color:var(--color-danger-text);">*</span></label>
                     <p style="font-size:12px; color:var(--color-text-secondary); margin:-4px 0 10px;">
                         Toma una foto legible de la guía de despacho firmada. Se enviará por correo en PDF.
                     </p>
                     <input type="file" id="id_foto_guia" name="foto_guia"
                            accept="image/jpeg,image/png,image/webp" capture="environment"
-                           class="form-input">
-                    {% if form.foto_guia.errors %}
-                    <div role="alert" style="font-size:12px; color:var(--color-danger-text); margin-top:5px;">
+                           class="form-input" aria-describedby="error_foto_guia">
+                    <div id="error_foto_guia" class="field-error" data-error-for="foto_guia" role="alert">
+                        {% if form.foto_guia.errors %}
                         {% for error in form.foto_guia.errors %}<div>{{ error }}</div>{% endfor %}
+                        {% endif %}
                     </div>
-                    {% endif %}
 
                     <label for="id_fotos_evidencia" style="margin-top:18px;">
                         <span id="evidenceLabel">Evidencia de la entrega</span>
@@ -493,23 +520,24 @@
                     </p>
                     <input type="file" id="id_fotos_evidencia" name="fotos_evidencia"
                            accept="image/jpeg,image/png,image/webp" capture="environment"
-                           multiple class="form-input">
+                           multiple class="form-input" aria-describedby="evidenceHelp error_fotos_evidencia">
                     <p style="font-size:11px; color:var(--color-text-muted); margin-top:6px;">
                         Formatos JPG, PNG o WEBP. Máximo 10 MB por foto.
                     </p>
-                    {% if form.fotos_evidencia.errors %}
-                    <div role="alert" style="font-size:12px; color:var(--color-danger-text); margin-top:5px;">
+                    <div id="error_fotos_evidencia" class="field-error" data-error-for="fotos_evidencia" role="alert">
+                        {% if form.fotos_evidencia.errors %}
                         {% for error in form.fotos_evidencia.errors %}<div>{{ error }}</div>{% endfor %}
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
 
                 <div class="field">
-                    <label>Observaciones <span style="color:var(--color-text-secondary); font-weight:400;">(opcional)</span></label>
+                    <label for="{{ form.notas.id_for_label }}">Observaciones <span style="color:var(--color-text-secondary); font-weight:400;">(opcional)</span></label>
                     {{ form.notas }}
+                    <div class="field-error" data-error-for="notas" role="alert"></div>
                 </div>
 
-                <button type="submit" class="btn-submit">Confirmar cambio</button>
+                <button type="submit" class="btn-submit" id="submitButton">Confirmar cambio</button>
             </form>
         </div>
 
@@ -582,22 +610,75 @@
             }
         }
 
-        function setEstado(value) {
-            const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
-            if (sel) {
-                sel.value = value;
-                toggleFotoField(value);
-                document.getElementById('updateForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
-            const sel = document.getElementById('{{ form.nuevo_estado.id_for_label }}');
-            if (sel) {
-                sel.addEventListener('change', () => toggleFotoField(sel.value));
-                toggleFotoField(sel.value);
+            const radios = document.querySelectorAll('input[name="nuevo_estado"]');
+            radios.forEach((radio) => {
+                radio.addEventListener('change', () => toggleFotoField(radio.value));
+                if (radio.checked) toggleFotoField(radio.value);
+            });
+
+            const summary = document.getElementById('formErrorSummary');
+            if (summary && !summary.hidden) summary.focus();
+        });
+
+        document.getElementById('updateForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const button = document.getElementById('submitButton');
+            const summary = document.getElementById('formErrorSummary');
+            const summaryText = document.getElementById('formErrorSummaryText');
+
+            document.querySelectorAll('[data-error-for]').forEach((node) => {
+                node.innerHTML = '';
+            });
+            summary.hidden = true;
+            button.disabled = true;
+            button.textContent = 'Guardando…';
+            button.setAttribute('aria-busy', 'true');
+
+            try {
+                const response = await fetch(form.action || window.location.href, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    credentials: 'same-origin',
+                });
+                const data = await response.json();
+
+                if (!response.ok || !data.ok) {
+                    const errors = data.errors || {};
+                    Object.entries(errors).forEach(([field, messages]) => {
+                        const target = document.querySelector(`[data-error-for="${field}"]`);
+                        if (target) {
+                            target.innerHTML = messages.map((message) => `<div>${escapeHtml(message)}</div>`).join('');
+                        }
+                    });
+                    summaryText.textContent = data.message || 'Revisa los campos indicados y vuelve a intentarlo.';
+                    summary.hidden = false;
+                    summary.focus();
+                    return;
+                }
+
+                button.textContent = 'Guardado';
+                window.location.assign(data.redirect_url);
+            } catch (error) {
+                summaryText.textContent = 'No se pudo conectar. Tus fotos siguen seleccionadas; revisa tu conexión y vuelve a intentarlo.';
+                summary.hidden = false;
+                summary.focus();
+            } finally {
+                if (button.textContent !== 'Guardado') {
+                    button.disabled = false;
+                    button.textContent = 'Confirmar cambio';
+                    button.removeAttribute('aria-busy');
+                }
             }
         });
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value;
+            return element.innerHTML;
+        }
 
     </script>
 
