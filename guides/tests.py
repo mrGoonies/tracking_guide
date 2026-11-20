@@ -1,4 +1,5 @@
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -106,3 +107,71 @@ class GuideStateTransitionTests(TestCase):
         self.assertEqual(created.transportista, self.carrier)
         self.assertEqual(created.estado, 'asignada')
         self.assertEqual(created.etapas.get().estado, 'asignada')
+
+    def test_delivery_without_both_evidence_categories_does_not_change_state(self):
+        self.guide.estado = 'en_ruta'
+        self.guide.save(update_fields=['estado'])
+        self.client.force_login(self.carrier)
+        stage_count = self.guide.etapas.count()
+
+        response = self.client.post(
+            reverse('guide_detail', args=[self.guide.id]),
+            {'nuevo_estado': 'entregada'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        self.assertIn(
+            'Falta la foto de la guía de despacho firmada.',
+            form.errors['foto_guia'],
+        )
+        self.assertIn(
+            'Falta al menos una foto como evidencia de la entrega.',
+            form.errors['fotos_evidencia'],
+        )
+        self.guide.refresh_from_db()
+        self.assertEqual(self.guide.estado, 'en_ruta')
+        self.assertEqual(self.guide.etapas.count(), stage_count)
+
+    def test_rejection_with_only_guide_photo_explains_missing_rejection_evidence(self):
+        self.guide.estado = 'en_ruta'
+        self.guide.save(update_fields=['estado'])
+        self.client.force_login(self.carrier)
+        stage_count = self.guide.etapas.count()
+        invalid_but_present_file = SimpleUploadedFile(
+            'guia.jpg', b'not-used-because-evidence-is-missing', 'image/jpeg'
+        )
+
+        response = self.client.post(
+            reverse('guide_detail', args=[self.guide.id]),
+            {'nuevo_estado': 'rechazada', 'foto_guia': invalid_but_present_file},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            'Falta al menos una foto como evidencia del rechazo.',
+            response.context['form'].errors['fotos_evidencia'],
+        )
+        self.guide.refresh_from_db()
+        self.assertEqual(self.guide.estado, 'en_ruta')
+        self.assertEqual(self.guide.etapas.count(), stage_count)
+
+    def test_api_delivery_without_evidence_returns_errors_by_category(self):
+        self.guide.estado = 'en_ruta'
+        self.guide.save(update_fields=['estado'])
+        api = APIClient()
+        api.force_authenticate(self.carrier)
+        stage_count = self.guide.etapas.count()
+
+        response = api.post(
+            reverse('api_update_estado', args=[self.guide.id]),
+            {'estado': 'entregada'},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('foto_guia', response.data['campos'])
+        self.assertIn('fotos_evidencia', response.data['campos'])
+        self.guide.refresh_from_db()
+        self.assertEqual(self.guide.estado, 'en_ruta')
+        self.assertEqual(self.guide.etapas.count(), stage_count)

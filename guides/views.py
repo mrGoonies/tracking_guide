@@ -29,6 +29,7 @@ from .utils import get_home_url_for_user, is_transportista, is_coordinador
 from .models import Client, DeletedGuideNumber, DispatchGuide, GuideStage, GuideStagePhoto, Seller
 from .services import send_seller_notification, send_coordinator_notification, generate_guide_pdf_backup
 from .workflows import allowed_state_choices, validate_state_transition
+from .photo_validation import validate_required_evidence
 
 def home(request):
     if request.user.is_authenticated:
@@ -385,7 +386,8 @@ def guide_detail(request, guide_id):
             nuevo_estado = form.cleaned_data['nuevo_estado']
             notas = form.cleaned_data.get('notas', '')
 
-            fotos = request.FILES.getlist('evidencia_fotos')
+            fotos_guia = request.FILES.getlist('foto_guia')
+            fotos_evidencia = request.FILES.getlist('fotos_evidencia')
             requiere_evidencia = nuevo_estado in DispatchGuide.ESTADOS_REQUIEREN_FOTO
             transition_is_valid, transition_error = validate_state_transition(
                 guide, nuevo_estado, request.user
@@ -393,8 +395,16 @@ def guide_detail(request, guide_id):
 
             if not transition_is_valid:
                 form.add_error('nuevo_estado', transition_error)
-            elif requiere_evidencia and not fotos:
-                form.add_error('evidencia_foto', 'Debes subir al menos una foto al marcar como entregada o rechazada.')
+            elif requiere_evidencia:
+                evidence_errors = validate_required_evidence(
+                    nuevo_estado, fotos_guia, fotos_evidencia
+                )
+                for field, field_errors in evidence_errors.items():
+                    for error in field_errors:
+                        form.add_error(field, error)
+
+            if form.errors:
+                pass
             else:
                 with transaction.atomic():
                     locked_guide = DispatchGuide.objects.select_for_update().get(pk=guide.pk)
@@ -410,16 +420,34 @@ def guide_detail(request, guide_id):
                             observaciones=notas
                         )
 
-                        # La primera foto se toma como la guía de despacho firmada.
                         pdf_bytes = None
-                        for i, foto in enumerate(fotos):
-                            categoria = ('guia' if i == 0 else 'cliente') if requiere_evidencia else 'general'
-                            foto_obj = GuideStagePhoto.objects.create(etapa=stage, foto=foto, orden=i, categoria=categoria)
-                            if categoria == 'guia':
-                                pdf_bytes, pdf_url = generate_guide_pdf_backup(foto, locked_guide)
-                                if pdf_url:
-                                    foto_obj.pdf_backup = pdf_url
-                                    foto_obj.save(update_fields=['pdf_backup'])
+                        if requiere_evidencia:
+                            foto_guia = fotos_guia[0]
+                            foto_obj = GuideStagePhoto.objects.create(
+                                etapa=stage, foto=foto_guia, orden=0, categoria='guia'
+                            )
+                            pdf_bytes, pdf_url = generate_guide_pdf_backup(
+                                foto_guia, locked_guide
+                            )
+                            if pdf_url:
+                                foto_obj.pdf_backup = pdf_url
+                                foto_obj.save(update_fields=['pdf_backup'])
+
+                            for i, foto in enumerate(fotos_evidencia):
+                                GuideStagePhoto.objects.create(
+                                    etapa=stage,
+                                    foto=foto,
+                                    orden=i,
+                                    categoria='cliente',
+                                )
+                        else:
+                            for i, foto in enumerate(fotos_evidencia):
+                                GuideStagePhoto.objects.create(
+                                    etapa=stage,
+                                    foto=foto,
+                                    orden=i,
+                                    categoria='general',
+                                )
 
                         locked_guide.estado = nuevo_estado
                         if requiere_evidencia and not locked_guide.fecha_envio:

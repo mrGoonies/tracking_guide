@@ -93,10 +93,15 @@ class UpdateGuideStateForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
-    evidencia_foto = forms.ImageField(
-        label='Evidencia Fotográfica',
+    foto_guia = forms.FileField(
+        label='Foto de la guía de despacho firmada',
         required=False,
         widget=forms.FileInput(attrs={'accept': 'image/*', 'capture': 'environment', 'class': 'form-input'})
+    )
+
+    fotos_evidencia = forms.FileField(
+        label='Fotos de evidencia',
+        required=False,
     )
 
     notas = forms.CharField(
