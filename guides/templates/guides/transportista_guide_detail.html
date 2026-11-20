@@ -18,6 +18,7 @@
             min-height: 100vh;
             padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
         /* Header */
@@ -32,6 +33,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 8px;
         }
 
         .btn-back {
@@ -42,19 +44,26 @@
             text-decoration: none;
             font-size: 14px;
             font-weight: 700;
-            padding: 6px 12px;
+            min-height: 44px;
+            padding: 10px 12px;
             border-radius: var(--radius-sm);
             background: rgba(255,255,255,0.15);
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .header-guide {
             text-align: center;
+            min-width: 0;
         }
 
         .header-guide-num {
             font-size: 16px;
             font-weight: 800;
             color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .header-guide-status {
@@ -89,6 +98,7 @@
             padding: 18px;
             margin-bottom: 12px;
             box-shadow: var(--shadow-sm);
+            min-width: 0;
         }
 
         .card-title {
@@ -115,7 +125,7 @@
             margin-top: 1px;
         }
 
-        .info-content {}
+        .info-content { min-width: 0; }
 
         .info-label {
             font-size: 11px;
@@ -131,12 +141,16 @@
             color: var(--color-text);
             font-weight: 600;
             line-height: 1.4;
+            overflow-wrap: anywhere;
         }
 
         .info-value a {
             color: var(--color-primary);
             text-decoration: none;
             font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
         }
 
         .status-badge {
@@ -359,6 +373,21 @@
             border-radius: var(--radius-md);
             border: 1px solid var(--color-border);
         }
+
+        .photo-link {
+            display: inline-flex;
+            min-width: 80px;
+            min-height: 80px;
+            border-radius: var(--radius-md);
+        }
+
+        @media (max-width: 340px) {
+            .header { padding-left: 12px; padding-right: 12px; }
+            .brand { height: 30px; padding-left: 5px; padding-right: 5px; }
+            .btn-back { padding-left: 9px; padding-right: 9px; }
+            .content { padding-left: 10px; padding-right: 10px; }
+            .card { padding: 16px 14px; }
+        }
     </style>
     <script src="{% static 'guides/js/camera.js' %}" defer></script>
 </head>
@@ -366,7 +395,9 @@
 
     <div class="header">
         <div class="header-row">
-            <a href="{% url 'transportista_guides' %}" class="btn-back">← Volver</a>
+            <a href="{% url 'transportista_guides' %}" class="btn-back">
+                <span aria-hidden="true">←</span> Volver
+            </a>
             <div class="header-guide">
                 <div class="header-guide-num">Guía #{{ guide.numero_guia }}</div>
                 <div class="header-guide-status">{{ guide.get_estado_display }}</div>
@@ -390,14 +421,14 @@
             <div class="card-title">Información de entrega</div>
             <div class="info-list">
                 <div class="info-row">
-                    <span class="info-icon">🏢</span>
+                    <span class="info-icon" aria-hidden="true">🏢</span>
                     <div class="info-content">
                         <div class="info-label">Cliente</div>
                         <div class="info-value">{{ guide.cliente.nombre }}</div>
                     </div>
                 </div>
                 <div class="info-row">
-                    <span class="info-icon">📍</span>
+                    <span class="info-icon" aria-hidden="true">📍</span>
                     <div class="info-content">
                         <div class="info-label">Dirección</div>
                         <div class="info-value">{{ guide.direccion_entrega }}</div>
@@ -405,18 +436,21 @@
                 </div>
                 {% if guide.map_link %}
                 <div class="info-row">
-                    <span class="info-icon">🗺️</span>
+                    <span class="info-icon" aria-hidden="true">🗺️</span>
                     <div class="info-content">
                         <div class="info-label">Mapa</div>
                         <div class="info-value">
-                            <a href="{{ guide.map_link }}" target="_blank">Abrir en Google Maps →</a>
+                            <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
+                               aria-label="Abrir ubicación de la guía {{ guide.numero_guia }} en Google Maps, en una pestaña nueva">
+                                Abrir en Google Maps <span aria-hidden="true">→</span>
+                            </a>
                         </div>
                     </div>
                 </div>
                 {% endif %}
                 {% if guide.fecha_despacho %}
                 <div class="info-row">
-                    <span class="info-icon">📅</span>
+                    <span class="info-icon" aria-hidden="true">📅</span>
                     <div class="info-content">
                         <div class="info-label">Fecha de despacho</div>
                         <div class="info-value">{{ guide.fecha_despacho|date:"d/m/Y" }}</div>
@@ -424,7 +458,7 @@
                 </div>
                 {% endif %}
                 <div class="info-row">
-                    <span class="info-icon">📋</span>
+                    <span class="info-icon" aria-hidden="true">📋</span>
                     <div class="info-content">
                         <div class="info-label">Estado actual</div>
                         <div class="info-value">
@@ -436,7 +470,7 @@
                 </div>
                 {% if guide.notas %}
                 <div class="info-row">
-                    <span class="info-icon">💬</span>
+                    <span class="info-icon" aria-hidden="true">💬</span>
                     <div class="info-content">
                         <div class="info-label">Instrucciones</div>
                         <div class="info-value">{{ guide.notas }}</div>
@@ -571,15 +605,21 @@
                     {% if stage.fotos.all %}
                     <div class="tl-photos" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
                         {% for p in stage.fotos.all %}
-                        <a href="{{ p.foto.url }}" target="_blank">
-                            <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}"
-                                 style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border);">
+                        <a href="{{ p.foto.url }}" target="_blank" rel="noopener noreferrer"
+                           class="photo-link"
+                           aria-label="Abrir foto {{ forloop.counter }} de la etapa {{ stage.get_estado_display }} en una pestaña nueva">
+                            <img src="{{ p.foto.url }}" alt="Foto {{ forloop.counter }}: {{ p.get_categoria_display }}"
+                                  style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border);">
                         </a>
                         {% endfor %}
                     </div>
                     {% elif stage.foto %}
                     <div class="tl-photo">
-                        <img src="{{ stage.foto.url }}" alt="Evidencia">
+                        <a href="{{ stage.foto.url }}" target="_blank" rel="noopener noreferrer"
+                           class="photo-link"
+                           aria-label="Abrir evidencia de la etapa {{ stage.get_estado_display }} en una pestaña nueva">
+                            <img src="{{ stage.foto.url }}" alt="Evidencia de {{ stage.get_estado_display }}">
+                        </a>
                     </div>
                     {% endif %}
                 </div>
