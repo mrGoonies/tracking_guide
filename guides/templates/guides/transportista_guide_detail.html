@@ -51,6 +51,7 @@
             justify-content: center;
             flex-shrink: 0;
         }
+        .btn-back svg { width: 18px; height: 18px; flex: 0 0 auto; }
 
         .header-guide {
             text-align: center;
@@ -64,12 +65,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        }
-
-        .header-guide-status {
-            font-size: 11px;
-            color: rgba(255,255,255,0.75);
-            margin-top: 2px;
         }
 
         .brand { height: 34px; width: auto; background: #fff; padding: 3px 8px; border-radius: 5px; }
@@ -112,30 +107,21 @@
             border-bottom: 1px solid var(--color-primary-surface);
         }
 
-        /* Info rows */
-        .info-list { display: flex; flex-direction: column; gap: 12px; }
-
-        .info-row { display: flex; gap: 12px; align-items: flex-start; }
-
-        .info-icon {
-            font-size: 18px;
-            flex-shrink: 0;
-            width: 28px;
-            text-align: center;
-            margin-top: 1px;
+        /* Delivery summary */
+        .delivery-card { padding: 14px 16px; }
+        .delivery-card .card-title {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
         }
-
-        .info-content { min-width: 0; }
-
+        .delivery-primary { min-width: 0; }
         .info-label {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--color-text-muted);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.4px;
             margin-bottom: 2px;
         }
-
         .info-value {
             font-size: 15px;
             color: var(--color-text);
@@ -143,14 +129,64 @@
             line-height: 1.4;
             overflow-wrap: anywhere;
         }
-
-        .info-value a {
+        .delivery-client {
+            margin-bottom: 6px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .delivery-address {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .delivery-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--color-border);
+            flex-wrap: wrap;
+        }
+        .delivery-date {
+            display: inline-flex;
+            align-items: center;
+            min-height: 32px;
+            color: var(--color-text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .map-link {
             color: var(--color-primary);
             text-decoration: none;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
+            gap: 6px;
             min-height: 44px;
+            margin-left: auto;
+            padding: 8px 10px;
+            border: 1px solid var(--color-primary-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-primary-surface);
+            font-size: 13px;
+        }
+        .map-link svg { width: 18px; height: 18px; flex: 0 0 auto; }
+        .delivery-notes {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-left: 3px solid var(--color-primary);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            background: var(--color-primary-surface);
+        }
+        .delivery-notes .info-label {
+            color: var(--color-primary);
+            margin-bottom: 3px;
+        }
+        .delivery-notes .info-value {
+            font-size: 13px;
+            line-height: 1.45;
         }
 
         .status-badge {
@@ -188,7 +224,7 @@
             color: var(--color-primary);
         }
         .state-option input:focus-visible + label {
-            outline: 3px solid var(--color-primary-border);
+            outline: 3px solid var(--color-primary-light);
             outline-offset: 2px;
         }
         .form-error-summary {
@@ -198,9 +234,13 @@
             border-radius: var(--radius-md);
             background: var(--color-danger-bg);
             color: var(--color-danger-text);
-            font-size: 13px;
+            font-size: 14px;
         }
-        .field-error { font-size: 12px; color: var(--color-danger-text); margin-top: 5px; }
+        .form-error-summary:focus-visible {
+            outline: 3px solid var(--color-danger);
+            outline-offset: 3px;
+        }
+        .field-error { font-size: 13px; color: var(--color-danger-text); margin-top: 5px; }
 
         /* Form fields */
         .field { margin-bottom: 16px; }
@@ -238,54 +278,111 @@
         .field textarea { resize: none; min-height: 90px; }
 
         /* Photo upload */
-        .photo-upload {
-            position: relative;
+        .photo-picker {
+            padding: 14px;
+            border: 1.5px solid var(--color-border-strong);
+            border-radius: var(--radius-lg);
+            background: var(--color-surface-muted);
         }
-
-        .photo-input {
-            display: none;
+        .photo-picker + .photo-picker { margin-top: 18px; }
+        .photo-picker-title {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--color-text);
+            font-size: 14px;
+            font-weight: 800;
         }
-
-        .photo-label {
-            display: flex;
-            flex-direction: column;
+        .photo-picker-help {
+            margin-bottom: 12px;
+            color: var(--color-text-secondary);
+            font-size: 12px;
+        }
+        .photo-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .photo-action {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            padding: 28px 16px;
-            border: 2.5px dashed var(--color-primary-border);
-            border-radius: var(--radius-lg);
-            background: var(--color-primary-surface);
+            gap: 8px;
+            min-height: 48px;
+            padding: 11px 12px;
+            border: 1.5px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            color: var(--color-primary);
+            font: 800 14px/1.2 var(--font-sans);
             cursor: pointer;
-            transition: border-color var(--transition-base), background var(--transition-base);
-            text-align: center;
         }
-
-        .photo-label:active { background: var(--color-primary-surface-strong); }
-
-        .photo-label.has-file {
-            border-color: var(--color-primary);
-            background: var(--color-primary-surface-strong);
+        .photo-action:active { background: var(--color-primary-surface); }
+        .photo-action svg { width: 20px; height: 20px; flex: 0 0 auto; }
+        .photo-native-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
         }
-
-        .photo-icon { font-size: 36px; }
-
-        .photo-label-title {
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--color-primary);
+        .photo-selection {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--color-border);
         }
-
-        .photo-label-hint {
-            font-size: 12px;
+        .photo-count {
+            margin-bottom: 8px;
             color: var(--color-text-secondary);
-        }
-
-        .photo-filename {
-            font-size: 13px;
-            color: var(--color-primary);
+            font-size: 12px;
             font-weight: 700;
-            word-break: break-all;
+        }
+        .photo-previews { display: grid; gap: 8px; }
+        .photo-preview {
+            display: grid;
+            grid-template-columns: 64px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+        }
+        .photo-preview img {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-muted);
+        }
+        .photo-preview-info { min-width: 0; }
+        .photo-preview-name {
+            overflow: hidden;
+            color: var(--color-text);
+            font-size: 13px;
+            font-weight: 700;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .photo-preview-size { color: var(--color-text-secondary); font-size: 12px; }
+        .photo-remove {
+            min-width: 48px;
+            min-height: 48px;
+            padding: 8px;
+            border: 1px solid var(--color-danger);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
+            color: var(--color-danger-text);
+            font: 700 12px/1.2 var(--font-sans);
+            cursor: pointer;
+        }
+        .photo-remove:active { background: var(--color-danger-bg); }
+        .photo-limit {
+            margin-top: 8px;
+            color: var(--color-text-muted);
+            font-size: 13px;
+            line-height: 1.45;
         }
 
         /* Submit */
@@ -304,6 +401,13 @@
         }
 
         .btn-submit:active { background: var(--color-primary-dark); transform: scale(0.98); }
+        .btn-submit:disabled {
+            background: var(--color-surface-muted);
+            color: var(--color-text-secondary);
+            border: 1.5px solid var(--color-border-strong);
+            cursor: wait;
+            transform: none;
+        }
 
         /* Final state */
         .final-state {
@@ -316,7 +420,18 @@
             font-weight: 500;
         }
 
-        .final-state-icon { font-size: 36px; margin-bottom: 10px; }
+        .final-state-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            margin-bottom: 10px;
+            border-radius: 50%;
+            background: var(--color-primary-surface);
+            color: var(--color-primary);
+        }
+        .final-state-icon svg { width: 28px; height: 28px; }
 
         /* Timeline */
         .timeline { position: relative; padding-left: 22px; }
@@ -359,7 +474,7 @@
             flex-wrap: wrap;
         }
 
-        .tl-time { font-size: 12px; color: var(--color-text-muted); }
+        .tl-time { font-size: 13px; color: var(--color-text-muted); }
 
         .tl-obs {
             font-size: 13px;
@@ -387,20 +502,23 @@
             .btn-back { padding-left: 9px; padding-right: 9px; }
             .content { padding-left: 10px; padding-right: 10px; }
             .card { padding: 16px 14px; }
+            .delivery-card { padding: 13px 14px; }
+            .map-link { width: 100%; margin-left: 0; justify-content: center; }
+            .photo-actions { grid-template-columns: 1fr; }
         }
     </style>
-    <script src="{% static 'guides/js/camera.js' %}" defer></script>
+    <script src="{% static 'guides/js/photo-picker.js' %}" defer></script>
 </head>
 <body>
 
     <div class="header">
         <div class="header-row">
             <a href="{% url 'transportista_guides' %}" class="btn-back">
-                <span aria-hidden="true">←</span> Volver
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                Volver
             </a>
             <div class="header-guide">
                 <div class="header-guide-num">Guía #{{ guide.numero_guia }}</div>
-                <div class="header-guide-status">{{ guide.get_estado_display }}</div>
             </div>
             <img src="{% static 'guides/images/logo.webp' %}" alt="Irritec" class="brand">
         </div>
@@ -417,67 +535,43 @@
     <div class="content">
 
         <!-- Info de la guía -->
-        <div class="card">
+        <div class="card delivery-card">
             <div class="card-title">Información de entrega</div>
-            <div class="info-list">
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">🏢</span>
-                    <div class="info-content">
-                        <div class="info-label">Cliente</div>
-                        <div class="info-value">{{ guide.cliente.nombre }}</div>
-                    </div>
-                </div>
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">📍</span>
-                    <div class="info-content">
-                        <div class="info-label">Dirección</div>
-                        <div class="info-value">{{ guide.direccion_entrega }}</div>
-                    </div>
-                </div>
-                {% if guide.map_link %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">🗺️</span>
-                    <div class="info-content">
-                        <div class="info-label">Mapa</div>
-                        <div class="info-value">
-                            <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
-                               aria-label="Abrir ubicación de la guía {{ guide.numero_guia }} en Google Maps, en una pestaña nueva">
-                                Abrir en Google Maps <span aria-hidden="true">→</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+            <div class="delivery-primary">
+                <div class="info-label">Cliente</div>
+                <div class="info-value delivery-client">{{ guide.cliente.nombre }}</div>
+                <div class="info-label">Dirección</div>
+                <div class="info-value delivery-address">{{ guide.direccion_entrega }}</div>
+            </div>
+
+            <div class="delivery-meta">
+                <span class="status-badge badge-{{ guide.estado }}" aria-label="Estado actual: {{ guide.get_estado_display }}">
+                    {{ guide.get_estado_display }}
+                </span>
                 {% if guide.fecha_despacho %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">📅</span>
-                    <div class="info-content">
-                        <div class="info-label">Fecha de despacho</div>
-                        <div class="info-value">{{ guide.fecha_despacho|date:"d/m/Y" }}</div>
-                    </div>
-                </div>
+                <span class="delivery-date">
+                    Despacho: {{ guide.fecha_despacho|date:"d/m/Y" }}
+                </span>
                 {% endif %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">📋</span>
-                    <div class="info-content">
-                        <div class="info-label">Estado actual</div>
-                        <div class="info-value">
-                            <span class="status-badge badge-{{ guide.estado }}">
-                                {{ guide.get_estado_display }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                {% if guide.notas %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">💬</span>
-                    <div class="info-content">
-                        <div class="info-label">Instrucciones</div>
-                        <div class="info-value">{{ guide.notas }}</div>
-                    </div>
-                </div>
+                {% if guide.map_link %}
+                <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
+                   class="map-link"
+                   aria-label="Abrir ubicación de la guía {{ guide.numero_guia }} en Google Maps, en una pestaña nueva">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/>
+                        <circle cx="12" cy="10" r="2.5"/>
+                    </svg>
+                    Abrir mapa
+                </a>
                 {% endif %}
             </div>
+
+            {% if guide.notas %}
+            <div class="delivery-notes">
+                <div class="info-label">Instrucciones</div>
+                <div class="info-value">{{ guide.notas }}</div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Actualizar estado -->
@@ -532,32 +626,81 @@
                 </fieldset>
 
                 <div class="field" id="photoWrapper" style="display:none;">
-                    <label for="id_foto_guia">Foto de la guía firmada <span style="color:var(--color-danger-text);">*</span></label>
-                    <p style="font-size:12px; color:var(--color-text-secondary); margin:-4px 0 10px;">
-                        Toma una foto legible de la guía de despacho firmada. Se enviará por correo en PDF.
-                    </p>
-                    <input type="file" id="id_foto_guia" name="foto_guia"
-                           accept="image/jpeg,image/png,image/webp" capture="environment"
-                           class="form-input" aria-describedby="error_foto_guia">
+                    <section class="photo-picker" data-photo-picker data-max-files="1">
+                        <h3 class="photo-picker-title" id="guidePhotoTitle">
+                            Foto de la guía firmada <span style="color:var(--color-danger-text);">*</span>
+                        </h3>
+                        <p class="photo-picker-help" id="guidePhotoHelp">
+                            Toma o elige una foto legible. Se enviará por correo en PDF.
+                        </p>
+                        <input type="file" id="id_foto_guia" name="foto_guia"
+                               accept="image/jpeg,image/png,image/webp"
+                               class="photo-native-input" data-photo-output
+                               aria-labelledby="guidePhotoTitle"
+                               aria-describedby="guidePhotoHelp error_foto_guia">
+                        <input type="file" accept="image/jpeg,image/png,image/webp"
+                               capture="environment" class="photo-native-input"
+                               data-photo-source="camera" aria-hidden="true" tabindex="-1">
+                        <input type="file" accept="image/jpeg,image/png,image/webp"
+                               class="photo-native-input" data-photo-source="gallery"
+                               aria-hidden="true" tabindex="-1">
+                        <div class="photo-actions">
+                            <button type="button" class="photo-action" data-photo-open="camera">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                                Tomar foto
+                            </button>
+                            <button type="button" class="photo-action" data-photo-open="gallery">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                                Elegir de galería
+                            </button>
+                        </div>
+                        <div class="photo-selection" data-photo-selection hidden aria-live="polite">
+                            <p class="photo-count" data-photo-count></p>
+                            <div class="photo-previews" data-photo-previews></div>
+                        </div>
+                        <p class="photo-limit">1 foto, máximo 10 MB. Formatos JPG, PNG o WEBP.</p>
+                    </section>
                     <div id="error_foto_guia" class="field-error" data-error-for="foto_guia" role="alert">
                         {% if form.foto_guia.errors %}
                         {% for error in form.foto_guia.errors %}<div>{{ error }}</div>{% endfor %}
                         {% endif %}
                     </div>
 
-                    <label for="id_fotos_evidencia" style="margin-top:18px;">
-                        <span id="evidenceLabel">Evidencia de la entrega</span>
-                        <span style="color:var(--color-danger-text);">*</span>
-                    </label>
-                    <p id="evidenceHelp" style="font-size:12px; color:var(--color-text-secondary); margin:-4px 0 10px;">
-                        Adjunta entre 1 y 5 fotos que demuestren la entrega.
-                    </p>
-                    <input type="file" id="id_fotos_evidencia" name="fotos_evidencia"
-                           accept="image/jpeg,image/png,image/webp" capture="environment"
-                           multiple class="form-input" aria-describedby="evidenceHelp error_fotos_evidencia">
-                    <p style="font-size:11px; color:var(--color-text-muted); margin-top:6px;">
-                        Formatos JPG, PNG o WEBP. Máximo 10 MB por foto.
-                    </p>
+                    <section class="photo-picker" data-photo-picker data-max-files="5">
+                        <h3 class="photo-picker-title" id="evidenceTitle">
+                            <span id="evidenceLabel">Evidencia de la entrega</span>
+                            <span style="color:var(--color-danger-text);">*</span>
+                        </h3>
+                        <p class="photo-picker-help" id="evidenceHelp">
+                            Adjunta entre 1 y 5 fotos que demuestren la entrega.
+                        </p>
+                        <input type="file" id="id_fotos_evidencia" name="fotos_evidencia"
+                               accept="image/jpeg,image/png,image/webp" multiple
+                               class="photo-native-input" data-photo-output
+                               aria-labelledby="evidenceTitle"
+                               aria-describedby="evidenceHelp error_fotos_evidencia">
+                        <input type="file" accept="image/jpeg,image/png,image/webp"
+                               capture="environment" class="photo-native-input"
+                               data-photo-source="camera" aria-hidden="true" tabindex="-1">
+                        <input type="file" accept="image/jpeg,image/png,image/webp" multiple
+                               class="photo-native-input" data-photo-source="gallery"
+                               aria-hidden="true" tabindex="-1">
+                        <div class="photo-actions">
+                            <button type="button" class="photo-action" data-photo-open="camera">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                                Tomar foto
+                            </button>
+                            <button type="button" class="photo-action" data-photo-open="gallery">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                                Elegir de galería
+                            </button>
+                        </div>
+                        <div class="photo-selection" data-photo-selection hidden aria-live="polite">
+                            <p class="photo-count" data-photo-count></p>
+                            <div class="photo-previews" data-photo-previews></div>
+                        </div>
+                        <p class="photo-limit">Entre 1 y 5 fotos, máximo 10 MB cada una. Formatos JPG, PNG o WEBP.</p>
+                    </section>
                     <div id="error_fotos_evidencia" class="field-error" data-error-for="fotos_evidencia" role="alert">
                         {% if form.fotos_evidencia.errors %}
                         {% for error in form.fotos_evidencia.errors %}<div>{{ error }}</div>{% endfor %}
@@ -579,7 +722,11 @@
         <div class="card">
             <div class="final-state">
                 <div class="final-state-icon">
-                    {% if guide.estado == 'entregada' or guide.estado == 'cerrada' %}✅{% else %}🔒{% endif %}
+                    {% if guide.estado == 'entregada' or guide.estado == 'cerrada' %}
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
+                    {% else %}
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                    {% endif %}
                 </div>
                 Guía en estado final. No requiere más acciones.
             </div>
