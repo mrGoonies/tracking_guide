@@ -46,7 +46,9 @@
     /* Texto */
     --color-text: #0f172a;
     --color-text-secondary: #475569;
-    --color-text-muted: #94a3b8;
+    /* Texto informativo secundario: >=4.5:1 tanto sobre surface como
+       surface-muted. No usar un gris más claro para texto normal. */
+    --color-text-muted: #5f6f82;
     --color-text-on-primary: #ffffff;
 
     /* Bordes */
@@ -138,7 +140,8 @@
 
         --color-text: #f1f5f9;
         --color-text-secondary: #b6c2d4;
-        --color-text-muted: #7c8aa0;
+        /* >=4.5:1 sobre --color-surface y --color-surface-muted. */
+        --color-text-muted: #7e8ca2;
         --color-text-on-primary: #ffffff;
 
         --color-border: #253148;

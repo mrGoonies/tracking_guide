@@ -66,12 +66,6 @@
             white-space: nowrap;
         }
 
-        .header-guide-status {
-            font-size: 11px;
-            color: rgba(255,255,255,0.75);
-            margin-top: 2px;
-        }
-
         .brand { height: 34px; width: auto; background: #fff; padding: 3px 8px; border-radius: 5px; }
 
         /* Messages */
@@ -112,30 +106,21 @@
             border-bottom: 1px solid var(--color-primary-surface);
         }
 
-        /* Info rows */
-        .info-list { display: flex; flex-direction: column; gap: 12px; }
-
-        .info-row { display: flex; gap: 12px; align-items: flex-start; }
-
-        .info-icon {
-            font-size: 18px;
-            flex-shrink: 0;
-            width: 28px;
-            text-align: center;
-            margin-top: 1px;
+        /* Delivery summary */
+        .delivery-card { padding: 14px 16px; }
+        .delivery-card .card-title {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
         }
-
-        .info-content { min-width: 0; }
-
+        .delivery-primary { min-width: 0; }
         .info-label {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--color-text-muted);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.4px;
             margin-bottom: 2px;
         }
-
         .info-value {
             font-size: 15px;
             color: var(--color-text);
@@ -143,14 +128,64 @@
             line-height: 1.4;
             overflow-wrap: anywhere;
         }
-
-        .info-value a {
+        .delivery-client {
+            margin-bottom: 6px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .delivery-address {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .delivery-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--color-border);
+            flex-wrap: wrap;
+        }
+        .delivery-date {
+            display: inline-flex;
+            align-items: center;
+            min-height: 32px;
+            color: var(--color-text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .map-link {
             color: var(--color-primary);
             text-decoration: none;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
+            gap: 6px;
             min-height: 44px;
+            margin-left: auto;
+            padding: 8px 10px;
+            border: 1px solid var(--color-primary-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-primary-surface);
+            font-size: 13px;
+        }
+        .map-link svg { width: 18px; height: 18px; flex: 0 0 auto; }
+        .delivery-notes {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-left: 3px solid var(--color-primary);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            background: var(--color-primary-surface);
+        }
+        .delivery-notes .info-label {
+            color: var(--color-primary);
+            margin-bottom: 3px;
+        }
+        .delivery-notes .info-value {
+            font-size: 13px;
+            line-height: 1.45;
         }
 
         .status-badge {
@@ -188,7 +223,7 @@
             color: var(--color-primary);
         }
         .state-option input:focus-visible + label {
-            outline: 3px solid var(--color-primary-border);
+            outline: 3px solid var(--color-primary-light);
             outline-offset: 2px;
         }
         .form-error-summary {
@@ -198,9 +233,13 @@
             border-radius: var(--radius-md);
             background: var(--color-danger-bg);
             color: var(--color-danger-text);
-            font-size: 13px;
+            font-size: 14px;
         }
-        .field-error { font-size: 12px; color: var(--color-danger-text); margin-top: 5px; }
+        .form-error-summary:focus-visible {
+            outline: 3px solid var(--color-danger);
+            outline-offset: 3px;
+        }
+        .field-error { font-size: 13px; color: var(--color-danger-text); margin-top: 5px; }
 
         /* Form fields */
         .field { margin-bottom: 16px; }
@@ -320,12 +359,12 @@
         .photo-preview-name {
             overflow: hidden;
             color: var(--color-text);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        .photo-preview-size { color: var(--color-text-secondary); font-size: 11px; }
+        .photo-preview-size { color: var(--color-text-secondary); font-size: 12px; }
         .photo-remove {
             min-width: 48px;
             min-height: 48px;
@@ -341,7 +380,8 @@
         .photo-limit {
             margin-top: 8px;
             color: var(--color-text-muted);
-            font-size: 11px;
+            font-size: 13px;
+            line-height: 1.45;
         }
 
         /* Submit */
@@ -360,6 +400,13 @@
         }
 
         .btn-submit:active { background: var(--color-primary-dark); transform: scale(0.98); }
+        .btn-submit:disabled {
+            background: var(--color-surface-muted);
+            color: var(--color-text-secondary);
+            border: 1.5px solid var(--color-border-strong);
+            cursor: wait;
+            transform: none;
+        }
 
         /* Final state */
         .final-state {
@@ -415,7 +462,7 @@
             flex-wrap: wrap;
         }
 
-        .tl-time { font-size: 12px; color: var(--color-text-muted); }
+        .tl-time { font-size: 13px; color: var(--color-text-muted); }
 
         .tl-obs {
             font-size: 13px;
@@ -443,6 +490,8 @@
             .btn-back { padding-left: 9px; padding-right: 9px; }
             .content { padding-left: 10px; padding-right: 10px; }
             .card { padding: 16px 14px; }
+            .delivery-card { padding: 13px 14px; }
+            .map-link { width: 100%; margin-left: 0; justify-content: center; }
             .photo-actions { grid-template-columns: 1fr; }
         }
     </style>
@@ -457,7 +506,6 @@
             </a>
             <div class="header-guide">
                 <div class="header-guide-num">Guía #{{ guide.numero_guia }}</div>
-                <div class="header-guide-status">{{ guide.get_estado_display }}</div>
             </div>
             <img src="{% static 'guides/images/logo.webp' %}" alt="Irritec" class="brand">
         </div>
@@ -474,67 +522,43 @@
     <div class="content">
 
         <!-- Info de la guía -->
-        <div class="card">
+        <div class="card delivery-card">
             <div class="card-title">Información de entrega</div>
-            <div class="info-list">
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">🏢</span>
-                    <div class="info-content">
-                        <div class="info-label">Cliente</div>
-                        <div class="info-value">{{ guide.cliente.nombre }}</div>
-                    </div>
-                </div>
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">📍</span>
-                    <div class="info-content">
-                        <div class="info-label">Dirección</div>
-                        <div class="info-value">{{ guide.direccion_entrega }}</div>
-                    </div>
-                </div>
-                {% if guide.map_link %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">🗺️</span>
-                    <div class="info-content">
-                        <div class="info-label">Mapa</div>
-                        <div class="info-value">
-                            <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
-                               aria-label="Abrir ubicación de la guía {{ guide.numero_guia }} en Google Maps, en una pestaña nueva">
-                                Abrir en Google Maps <span aria-hidden="true">→</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+            <div class="delivery-primary">
+                <div class="info-label">Cliente</div>
+                <div class="info-value delivery-client">{{ guide.cliente.nombre }}</div>
+                <div class="info-label">Dirección</div>
+                <div class="info-value delivery-address">{{ guide.direccion_entrega }}</div>
+            </div>
+
+            <div class="delivery-meta">
+                <span class="status-badge badge-{{ guide.estado }}" aria-label="Estado actual: {{ guide.get_estado_display }}">
+                    {{ guide.get_estado_display }}
+                </span>
                 {% if guide.fecha_despacho %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">📅</span>
-                    <div class="info-content">
-                        <div class="info-label">Fecha de despacho</div>
-                        <div class="info-value">{{ guide.fecha_despacho|date:"d/m/Y" }}</div>
-                    </div>
-                </div>
+                <span class="delivery-date">
+                    Despacho: {{ guide.fecha_despacho|date:"d/m/Y" }}
+                </span>
                 {% endif %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">📋</span>
-                    <div class="info-content">
-                        <div class="info-label">Estado actual</div>
-                        <div class="info-value">
-                            <span class="status-badge badge-{{ guide.estado }}">
-                                {{ guide.get_estado_display }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                {% if guide.notas %}
-                <div class="info-row">
-                    <span class="info-icon" aria-hidden="true">💬</span>
-                    <div class="info-content">
-                        <div class="info-label">Instrucciones</div>
-                        <div class="info-value">{{ guide.notas }}</div>
-                    </div>
-                </div>
+                {% if guide.map_link %}
+                <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
+                   class="map-link"
+                   aria-label="Abrir ubicación de la guía {{ guide.numero_guia }} en Google Maps, en una pestaña nueva">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/>
+                        <circle cx="12" cy="10" r="2.5"/>
+                    </svg>
+                    Abrir mapa
+                </a>
                 {% endif %}
             </div>
+
+            {% if guide.notas %}
+            <div class="delivery-notes">
+                <div class="info-label">Instrucciones</div>
+                <div class="info-value">{{ guide.notas }}</div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Actualizar estado -->
