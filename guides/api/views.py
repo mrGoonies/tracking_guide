@@ -15,6 +15,7 @@ from guides.services import (
     send_coordinator_notification,
     generate_guide_pdf_backup,
 )
+from guides.workflows import validate_state_transition
 from .permissions import IsTransportista
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -23,10 +24,6 @@ from .serializers import (
 )
 
 ESTADOS_REQUIEREN_FOTO = DispatchGuide.ESTADOS_REQUIEREN_FOTO
-
-# Transportistas no pueden cerrar guías — solo admin/coordinador desde la web
-ESTADOS_VALIDOS_TRANSPORTISTA = {'asignada', 'en_ruta', 'entregada', 'rechazada'}
-
 
 # ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -99,18 +96,12 @@ class UpdateEstadoView(APIView):
         foto_guia      = request.FILES.get('foto_guia')
         fotos_cliente  = request.FILES.getlist('fotos_cliente')
 
-        # Validar estado
-        if nuevo_estado not in ESTADOS_VALIDOS_TRANSPORTISTA:
+        transition_is_valid, transition_error = validate_state_transition(
+            guide, nuevo_estado, request.user
+        )
+        if not transition_is_valid:
             return Response(
-                {'error': f'Estado "{nuevo_estado}" no es válido.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Validar transición permitida
-        from .serializers import NEXT_STATE_MAP
-        if nuevo_estado not in NEXT_STATE_MAP.get(guide.estado, []):
-            return Response(
-                {'error': f'No se puede pasar de "{guide.estado}" a "{nuevo_estado}".'},
+                {'error': transition_error},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
