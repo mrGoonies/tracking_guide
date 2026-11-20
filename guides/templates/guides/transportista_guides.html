@@ -122,7 +122,18 @@
             padding: 64px 24px;
         }
 
-        .empty-icon { font-size: 52px; margin-bottom: 16px; }
+        .empty-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            border-radius: 50%;
+            background: var(--color-surface-muted);
+            color: var(--color-text-secondary);
+        }
+        .empty-icon svg { width: 32px; height: 32px; }
 
         .empty-title {
             font-size: 17px;
@@ -201,7 +212,12 @@
             align-items: baseline;
         }
 
-        .info-icon { font-size: 13px; flex-shrink: 0; width: 18px; }
+        .info-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            color: var(--color-text-secondary);
+        }
 
         .info-text {
             font-size: 13px;
@@ -265,7 +281,9 @@
             transition: background var(--transition-base);
             white-space: nowrap;
             min-height: 44px;
+            gap: 6px;
         }
+        .btn-map svg { width: 18px; height: 18px; flex: 0 0 auto; }
 
         @media (max-width: 340px) {
             .header { padding-left: 14px; padding-right: 14px; }
@@ -330,16 +348,16 @@
 
                     <div class="info-list">
                         <div class="info-row">
-                            <span class="info-icon" aria-hidden="true">🏢</span>
+                            <svg class="info-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M6 21V4h9v17M15 9h3v12M9 8h2M9 12h2M9 16h2"/></svg>
                             <span class="info-text"><strong>{{ guide.cliente.nombre }}</strong></span>
                         </div>
                         <div class="info-row">
-                            <span class="info-icon" aria-hidden="true">📍</span>
+                            <svg class="info-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
                             <span class="info-text">{{ guide.direccion_entrega }}</span>
                         </div>
                         {% if guide.fecha_despacho %}
                         <div class="info-row">
-                            <span class="info-icon" aria-hidden="true">📅</span>
+                            <svg class="info-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
                             <span class="info-text">
                                 <span class="despacho-pill">{{ guide.fecha_despacho|date:"d/m/Y" }}</span>
                             </span>
@@ -347,7 +365,7 @@
                         {% endif %}
                         {% if guide.notas %}
                         <div class="info-row">
-                            <span class="info-icon" aria-hidden="true">💬</span>
+                            <svg class="info-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/></svg>
                             <span class="info-text">{{ guide.notas }}</span>
                         </div>
                         {% endif %}
@@ -361,7 +379,8 @@
                     {% if guide.map_link %}
                     <a href="{{ guide.map_link }}" target="_blank" rel="noopener noreferrer"
                        class="btn-map" aria-label="Abrir mapa de la guía {{ guide.numero_guia }} en una pestaña nueva">
-                        <span aria-hidden="true">📍</span>&nbsp;Mapa
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                        Mapa
                     </a>
                     {% endif %}
                 </div>
@@ -370,7 +389,13 @@
 
         {% else %}
             <div class="empty">
-                <div class="empty-icon" aria-hidden="true">{% if filtro == 'activas' %}📭{% else %}✅{% endif %}</div>
+                <div class="empty-icon" aria-hidden="true">
+                    {% if filtro == 'activas' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l2 8v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6Z"/><path d="M2 13h5l2 3h6l2-3h5"/></svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                    {% endif %}
+                </div>
                 <div class="empty-title">
                     {% if filtro == 'activas' %}Sin entregas pendientes{% else %}Sin historial aún{% endif %}
                 </div>

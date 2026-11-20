@@ -107,11 +107,42 @@
             background: var(--color-surface);
             box-shadow: 0 0 0 3px var(--color-primary-surface-strong);
         }
+        .password-control { position: relative; }
+        .password-control input { padding-right: 58px; }
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 0;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            transform: translateY(-50%);
+        }
+        .password-toggle:hover,
+        .password-toggle:active { background: var(--color-primary-surface); }
+        .password-toggle svg { width: 22px; height: 22px; }
+        .password-toggle .icon-hidden,
+        .password-toggle[aria-pressed="true"] .icon-visible { display: none; }
+        .password-toggle[aria-pressed="true"] .icon-hidden { display: block; }
 
         .field-error {
             font-size: 13px;
             color: var(--color-danger-text);
             margin-top: 5px;
+        }
+        .access-help {
+            margin: calc(var(--space-2) * -1) 0 var(--space-5);
+            color: var(--color-text-secondary);
+            font-size: 13px;
+            line-height: 1.45;
         }
 
         /* Submit button */
@@ -158,7 +189,7 @@
 
                 {% if form.non_field_errors %}
                 <div class="alert-error">
-                    <span>⚠</span>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20Z"/><path d="M12 9v5M12 18h.01"/></svg>
                     <span>{{ form.non_field_errors.0 }}</span>
                 </div>
                 {% endif %}
@@ -175,12 +206,27 @@
                     </div>
 
                     <div class="field">
-                        <label for="id_password">Contraseña</label>
-                        {{ form.password }}
+                        <label for="{{ form.password.id_for_label }}">Contraseña</label>
+                        <div class="password-control">
+                            {{ form.password }}
+                            <button type="button"
+                                    class="password-toggle"
+                                    id="passwordToggle"
+                                    aria-label="Mostrar contraseña"
+                                    aria-controls="{{ form.password.id_for_label }}"
+                                    aria-pressed="false">
+                                <svg class="icon-visible" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="icon-hidden" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-2.1 2.8M6.6 6.6C3.6 8.4 2 12 2 12s3.5 6 10 6a10.6 10.6 0 0 0 4.1-.8M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                            </button>
+                        </div>
                         {% if form.password.errors %}
                         <div class="field-error">{{ form.password.errors.0 }}</div>
                         {% endif %}
                     </div>
+
+                    <p class="access-help">
+                        Si no puedes ingresar, solicita al administrador que revise o restablezca tu acceso.
+                    </p>
 
                     <button type="submit" class="btn-submit">Ingresar</button>
                 </form>
@@ -190,6 +236,21 @@
 
         <div class="copyright">Irritec Chile &copy; {% now "Y" %} — Sistema de Trazabilidad</div>
     </div>
+
+    <script>
+        (function () {
+            const button = document.getElementById('passwordToggle');
+            const input = document.getElementById('{{ form.password.id_for_label }}');
+            if (!button || !input) return;
+
+            button.addEventListener('click', function () {
+                const willShow = input.type === 'password';
+                input.type = willShow ? 'text' : 'password';
+                button.setAttribute('aria-pressed', String(willShow));
+                button.setAttribute('aria-label', willShow ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            });
+        }());
+    </script>
 
 </body>
 </html>
