@@ -1,15 +1,54 @@
+from io import BytesIO
 import uuid
 from unittest.mock import patch
 
+from PIL import Image
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 
 from .forms import UpdateGuideStateForm
 from .models import Client, DispatchGuide, GuideStage
+from .photo_validation import validate_required_evidence
 from .workflows import allowed_state_values, validate_state_transition
+
+
+class PhotoValidationTests(SimpleTestCase):
+    def jpeg_file(self, name, content_type):
+        buffer = BytesIO()
+        Image.new('RGB', (2, 2), 'white').save(buffer, format='JPEG')
+        return SimpleUploadedFile(name, buffer.getvalue(), content_type)
+
+    def test_valid_jpeg_is_accepted_despite_unusual_content_type(self):
+        guide = self.jpeg_file('guia.jpeg', 'image/jpg')
+        evidence = self.jpeg_file('evidencia.jpeg', 'application/octet-stream')
+
+        self.assertEqual(
+            validate_required_evidence('entregada', [guide], [evidence]),
+            {},
+        )
+
+    def test_invalid_content_is_rejected_despite_jpeg_content_type(self):
+        invalid = SimpleUploadedFile('evidencia.jpeg', b'not-an-image', 'image/jpeg')
+
+        errors = validate_required_evidence(
+            'entregada', [self.jpeg_file('guia.jpeg', 'image/jpeg')], [invalid]
+        )
+
+        self.assertIn('no contiene una imagen válida', errors['fotos_evidencia'][0])
+
+    def test_unsupported_image_format_is_still_rejected(self):
+        buffer = BytesIO()
+        Image.new('RGB', (2, 2), 'white').save(buffer, format='GIF')
+        gif = SimpleUploadedFile('evidencia.gif', buffer.getvalue(), 'image/jpeg')
+
+        errors = validate_required_evidence(
+            'entregada', [self.jpeg_file('guia.jpeg', 'image/jpeg')], [gif]
+        )
+
+        self.assertIn('debe ser una imagen JPG, PNG o WEBP', errors['fotos_evidencia'][0])
 
 
 class GuideStateTransitionTests(TestCase):
@@ -142,6 +181,29 @@ class GuideStateTransitionTests(TestCase):
         self.guide.refresh_from_db()
         self.assertEqual(self.guide.estado, 'en_ruta')
         self.assertEqual(self.guide.etapas.count(), stage_count)
+
+    def test_web_accepts_jpeg_evidence_with_nonstandard_content_type(self):
+        self.guide.estado = 'en_ruta'
+        self.guide.save(update_fields=['estado'])
+        self.client.force_login(self.carrier)
+        buffer = BytesIO()
+        Image.new('RGB', (2, 2), 'white').save(buffer, format='JPEG')
+
+        response = self.client.post(
+            reverse('guide_detail', args=[self.guide.id]),
+            {
+                'operation_id': str(uuid.uuid4()),
+                'nuevo_estado': 'entregada',
+                'fotos_evidencia': SimpleUploadedFile(
+                    'evidencia.jpeg', buffer.getvalue(), 'application/octet-stream'
+                ),
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn('foto_guia', response.json()['errors'])
+        self.assertNotIn('fotos_evidencia', response.json()['errors'])
 
     def test_rejection_with_only_guide_photo_explains_missing_rejection_evidence(self):
         self.guide.estado = 'en_ruta'

@@ -6,7 +6,6 @@ from PIL import Image, UnidentifiedImageError
 MAX_PHOTO_SIZE = 10 * 1024 * 1024
 MAX_EVIDENCE_PHOTOS = 5
 ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'WEBP'}
-ALLOWED_CONTENT_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
 
 
 def evidence_label(state):
@@ -20,15 +19,12 @@ def _validate_image(uploaded_file, label):
     if uploaded_file.size > MAX_PHOTO_SIZE:
         errors.append(f'{label} supera el máximo de 10 MB.')
 
-    content_type = (getattr(uploaded_file, 'content_type', '') or '').lower()
-    if content_type not in ALLOWED_CONTENT_TYPES:
-        errors.append(f'{label} debe ser una imagen JPG, PNG o WEBP.')
-        return errors
-
     try:
         uploaded_file.seek(0)
         image = Image.open(uploaded_file)
         image.verify()
+        # El MIME informado por el dispositivo puede no coincidir con el
+        # contenido (p. ej. image/jpg o application/octet-stream).
         if image.format not in ALLOWED_IMAGE_FORMATS:
             errors.append(f'{label} debe ser una imagen JPG, PNG o WEBP.')
     except (UnidentifiedImageError, OSError, SyntaxError):
