@@ -3,7 +3,8 @@
 from PIL import Image, UnidentifiedImageError
 
 
-MAX_PHOTO_SIZE = 10 * 1024 * 1024
+MAX_PHOTO_MB = 25
+MAX_PHOTO_SIZE = MAX_PHOTO_MB * 1024 * 1024
 MAX_EVIDENCE_PHOTOS = 5
 ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'WEBP'}
 
@@ -17,7 +18,7 @@ def evidence_label(state):
 def _validate_image(uploaded_file, label):
     errors = []
     if uploaded_file.size > MAX_PHOTO_SIZE:
-        errors.append(f'{label} supera el máximo de 10 MB.')
+        errors.append(f'{label} supera el máximo de {MAX_PHOTO_MB} MB.')
 
     try:
         uploaded_file.seek(0)

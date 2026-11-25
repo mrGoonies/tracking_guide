@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 
 from .forms import UpdateGuideStateForm
 from .models import Client, DispatchGuide, GuideStage
-from .photo_validation import validate_required_evidence
+from .photo_validation import MAX_PHOTO_SIZE, validate_required_evidence
 from .workflows import allowed_state_values, validate_state_transition
 
 
@@ -49,6 +49,23 @@ class PhotoValidationTests(SimpleTestCase):
         )
 
         self.assertIn('debe ser una imagen JPG, PNG o WEBP', errors['fotos_evidencia'][0])
+
+    def test_guide_and_evidence_allow_up_to_25_mb_each(self):
+        guide = self.jpeg_file('guia.jpeg', 'image/jpeg')
+        evidence = self.jpeg_file('evidencia.jpeg', 'image/jpeg')
+        guide.size = MAX_PHOTO_SIZE
+        evidence.size = MAX_PHOTO_SIZE
+
+        self.assertEqual(
+            validate_required_evidence('entregada', [guide], [evidence]),
+            {},
+        )
+
+        guide.size += 1
+        evidence.size += 1
+        errors = validate_required_evidence('entregada', [guide], [evidence])
+        self.assertIn('25 MB', errors['foto_guia'][0])
+        self.assertIn('25 MB', errors['fotos_evidencia'][0])
 
 
 class GuideStateTransitionTests(TestCase):
